@@ -11835,6 +11835,16 @@ html[data-theme="light"] .logic-breadcrumb span{background:#fff}
  box-shadow:0 0 0 2px rgba(255,59,48,.12);
 }
 
+
+/* ===== Barre mobile simplifiée ===== */
+.brand[role="button"]{user-select:none}
+@media(max-width:650px){
+ .top{min-height:62px;height:auto;padding:7px 10px!important}
+ .top-right{gap:5px!important}
+ .top-nav-stack{gap:4px!important}
+ .top-logout-row{justify-content:flex-end!important}
+ .top-nav-row{justify-content:flex-end!important;gap:5px!important}
+}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
@@ -13188,15 +13198,9 @@ if(!locautomotoRestoringView && root.innerHTML.trim()){
  locautomotoViewHistory.push({html:root.innerHTML,documentTitle:document.title});
  if(locautomotoViewHistory.length>30)locautomotoViewHistory.shift();
 }
-const u=me();root.innerHTML=`<div class="app"><header class="top"><div class="brand-block"><div class="brand-line"><div class="brand">LOCautomoto</div>${financeGaugeHtml()}</div>${isAdministrator()?`<div class="admin-under-brand">👤 Administrateur</div>`:`<div class="admin-under-brand">👤 ${esc(u.role)}</div>`}</div><div class="top-right top-nav-stack"><div class="top-logout-row">
+const u=me();root.innerHTML=`<div class="app"><header class="top"><div class="brand-block"><div class="brand-line"><div class="brand" onclick="home()" role="button" tabindex="0" title="Accueil" aria-label="Retour à l’accueil" style="cursor:pointer">LOCautomoto</div>${financeGaugeHtml()}</div>${isAdministrator()?`<div class="admin-under-brand">👤 Administrateur</div>`:`<div class="admin-under-brand">👤 ${esc(u.role)}</div>`}</div><div class="top-right top-nav-stack"><div class="top-logout-row">
 <button type="button" class="btn small lang-btn ai-top-btn" onclick="openGlobalAiHelp('accueil')" title="Assistant IA LOCautomoto">🤖 <span>IA</span></button>
-<button type="button" id="countryPickerBtn" class="country-picker-btn" onclick="toggleCountryMenu()" title="${esc(locCountry().name)} — choisir le pays" aria-label="Choisir le pays"><span id="currentCountryFlag">${locCountry().flag}</span></button>
 <button type="button" id="countrySettingsBtn" class="currency-badge settings-country-btn" onclick="openAppSettingsCenter()" title="Paramètres de l’application" aria-label="Paramètres de l’application">⚙️</button>
-<button type="button" id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleAppTheme()" title="Passer en mode clair">☀️</button>
-<button class="btn small logout-icon-btn" onclick="logout()" title="Déconnexion" aria-label="Déconnexion"><svg class="logout-power-svg" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2.8v8.1"></path>
-      <path d="M7.15 5.75a8 8 0 1 0 9.7 0"></path>
-    </svg></button>
 <div id="languageMenu" class="language-menu hidden">
  <button type="button" onclick="setAppLanguage('fr')">🇫🇷 Français</button>
  <button type="button" onclick="setAppLanguage('en')">🇬🇧 English</button>
@@ -13204,7 +13208,7 @@ const u=me();root.innerHTML=`<div class="app"><header class="top"><div class="br
  <button type="button" onclick="setAppLanguage('es')">🇪🇸 Español</button>
 </div>
 <div id="countryMenu" class="country-menu hidden"></div>
-</div><div class="top-nav-row"><button class="btn outline small top-icon-only" onclick="home()" title="Accueil" aria-label="Accueil">🏠</button><button type="button" class="btn outline small top-shortcut-btn" onclick="clientsView()" title="Clients" aria-label="Clients">👤</button><button type="button" class="btn outline small top-shortcut-btn" onclick="carsView()" title="Véhicules" aria-label="Véhicules">🚗</button>${isAdministrator()?`<button class="btn outline small top-icon-only" onclick="usersView()" title="Gérer les utilisateurs" aria-label="Gérer les utilisateurs">👥</button>`:''}<button type="button" class="btn outline small top-back-btn" onclick="locautomotoGoBack()" title="Retour à la page précédente" aria-label="Retour">←</button></div></div></header><main><div class="screen-title ${String(title).includes('Tableau de bord')?'dashboard-title-row':''}"><h1>${title}</h1>${String(title).includes('Tableau de bord')?`<div class="app-help-wrap"><button type="button" class="btn small app-help-toggle" onclick="openGlobalAiHelp('accueil')" title="Assistant IA / aide" aria-label="Assistant IA / aide">?</button><div id="appHelpSearchPanel" class="app-help-search collapsed"><input id="appHelpSearch" type="search" placeholder="🔎 Rechercher / aide sur l’app" onkeydown="if(event.key==='Enter')runAppHelpSearch()"><button type="button" class="btn small app-help-go" onclick="runAppHelpSearch()" title="Rechercher">🔎</button></div></div>`:''}</div>${body}</main></div>`;
+</div><div class="top-nav-row"><button type="button" class="btn outline small top-shortcut-btn" onclick="clientsView()" title="Clients" aria-label="Clients">👤</button><button type="button" class="btn outline small top-shortcut-btn" onclick="carsView()" title="Véhicules" aria-label="Véhicules">🚗</button>${isAdministrator()?`<button class="btn outline small top-icon-only" onclick="usersView()" title="Gérer les utilisateurs" aria-label="Gérer les utilisateurs">👥</button>`:''}<button type="button" class="btn outline small top-back-btn" onclick="locautomotoGoBack()" title="Retour à la page précédente" aria-label="Retour">←</button></div></div></header><main><div class="screen-title ${String(title).includes('Tableau de bord')?'dashboard-title-row':''}"><h1>${title}</h1>${String(title).includes('Tableau de bord')?`<div class="app-help-wrap"><button type="button" class="btn small app-help-toggle" onclick="openGlobalAiHelp('accueil')" title="Assistant IA / aide" aria-label="Assistant IA / aide">?</button><div id="appHelpSearchPanel" class="app-help-search collapsed"><input id="appHelpSearch" type="search" placeholder="🔎 Rechercher / aide sur l’app" onkeydown="if(event.key==='Enter')runAppHelpSearch()"><button type="button" class="btn small app-help-go" onclick="runAppHelpSearch()" title="Rechercher">🔎</button></div></div>`:''}</div>${body}</main></div>`;
  requestAnimationFrame(()=>{
    locautomotoScrollTop();
    applyAppLanguage();
@@ -13970,6 +13974,14 @@ function settingsView(){
    <div class="card" style="margin-bottom:14px;background:linear-gradient(180deg,#151b21,#10151a);border-color:#343f49">
      <div style="font-size:18px;font-weight:900;margin-bottom:5px">⚙️ Gestion des tarifs</div>
      <div class="muted">Choisissez une catégorie pour modifier les tarifs, la caution et le barème des sinistres.</div>
+   </div>
+   <div class="card" style="margin-bottom:14px">
+     <div style="font-size:18px;font-weight:900;margin-bottom:10px">📱 Application</div>
+     <div class="actions" style="display:grid;grid-template-columns:1fr;gap:9px">
+       <button type="button" class="btn outline" onclick="toggleCountryMenu()">🌍 Pays, langue et monnaie</button>
+       <button type="button" class="btn outline" onclick="toggleAppTheme()">☀️ / 🌙 Thème clair / sombre</button>
+       <button type="button" class="btn red" onclick="logout()">⏻ Déconnexion</button>
+     </div>
    </div>
    <div class="settings-quick-nav">
      <button class="btn outline" onclick="openSettingsSection('settingsCarRates',this)">🚗 Voiture</button>
