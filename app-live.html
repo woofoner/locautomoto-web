@@ -40442,5 +40442,315 @@ html[data-theme="light"] #modalBox > .modal-header{
 })();
 </script>
 
+
+<!-- LOC_DOC_ROBUSTNESS_V3_START -->
+<script id="loc-doc-robustness-v3">
+(function(){
+  const LABEL_STOP=/^(NOM|SURNAME|LAST\s*NAME|FAMILY\s*NAME|PR[ÉE]NOM|GIVEN\s*NAMES?|FIRST\s*NAME|NATIONALIT[ÉE]|NATIONALITY|DATE\s+DE\s+NAISSANCE|DATE\s+OF\s+BIRTH|DOB|SEXE|SEX|GENDER|DOCUMENT|NUM[ÉE]RO|ADDRESS|ADRESSE|EXPIR|ISSUE|VALID|SIGNATURE|TAILLE|HEIGHT)\b/i;
+  const cleanLine=v=>String(v||'').replace(/[|¦]/g,'I').replace(/[“”]/g,'"').replace(/\s+/g,' ').trim();
+  const safeName=v=>{
+    let s=cleanOCRName(cleanLine(v));
+    s=s.replace(/\b(SURNAME|NOM|LAST NAME|FAMILY NAME|GIVEN NAMES?|FIRST NAME|PR[ÉE]NOMS?)\b/ig,' ').replace(/\s+/g,' ').trim();
+    if(!s || s.length<2 || LABEL_STOP.test(s))return '';
+    return titleCaseName(s);
+  };
+  const lineSet=raw=>String(raw||'').replace(/\r/g,'\n').split('\n').map(cleanLine).filter(Boolean);
+
+  function valueNearLabels(raw,labelRes,cleaner){
+    const lines=lineSet(raw);
+    for(let i=0;i<lines.length;i++){
+      const line=lines[i];
+      for(const re0 of labelRes){
+        const flags=(re0.flags||'i').replace('g','');
+        const re=new RegExp(re0.source,flags);
+        const m=line.match(re);
+        if(!m)continue;
+        let same=line.slice((m.index||0)+m[0].length).replace(/^[\s:;\/\\\-–—|]+/,'').trim();
+        if(same && !LABEL_STOP.test(same)){
+          const v=cleaner?safeName(same):cleanLine(same);
+          if(v)return v;
+        }
+        for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+          const next=lines[j].replace(/^[\s:;\/\\\-–—|]+/,'').trim();
+          if(!next)continue;
+          if(LABEL_STOP.test(next))break;
+          const v=cleaner?safeName(next):cleanLine(next);
+          if(v)return v;
+        }
+      }
+    }
+    return '';
+  }
+  window.locValueNearLabels=valueNearLabels;
+
+  const baseExtractIdentityNames=window.extractIdentityNames;
+  window.extractIdentityNames=extractIdentityNames=function(raw){
+    const text=normalizeOCRText(raw);
+    const mrz=extractMRZData(text)||{};
+    let surname=valueNearLabels(text,[
+      /(?:^|\b)NOM(?:\s*\/\s*SURNAME)?\b/i,
+      /(?:^|\b)SURNAME(?:\s*\/\s*NOM)?\b/i,
+      /(?:^|\b)LAST\s*NAME\b/i,
+      /(?:^|\b)FAMILY\s*NAME\b/i,
+      /(?:^|\b)APELLIDOS?\b/i,
+      /(?:^|\b)COGNOME\b/i,
+      /(?:^|\b)NACHNAME\b/i,
+      /(?:^|\b)SOBRENOME\b/i
+    ],true);
+    let first=valueNearLabels(text,[
+      /(?:^|\b)PR[ÉE]NOMS?(?:\s*\/\s*GIVEN\s*NAMES?)?\b/i,
+      /(?:^|\b)GIVEN\s*NAMES?(?:\s*\/\s*PR[ÉE]NOMS?)?\b/i,
+      /(?:^|\b)FIRST\s*NAME\b/i,
+      /(?:^|\b)FORENAMES?\b/i,
+      /(?:^|\b)NOMBRES?\b/i,
+      /(?:^|\b)NOME\b/i,
+      /(?:^|\b)VORNAME\b/i
+    ],true);
+    const base=baseExtractIdentityNames?baseExtractIdentityNames(raw):{};
+    surname=surname||safeName(mrz.surname)||safeName(base?.surname);
+    first=first||safeName(mrz.first)||safeName(base?.first);
+    return {surname,first};
+  };
+
+  const baseExtractLabeledValue=window.extractLabeledValue;
+  window.extractLabeledValue=extractLabeledValue=function(text,labels,pattern='[^\\n]{2,60}'){
+    const normalized=normalizeOCRText(text);
+    const base=baseExtractLabeledValue?baseExtractLabeledValue(normalized,labels,pattern):'';
+    if(base && !LABEL_STOP.test(cleanLine(base)))return String(base).trim();
+    try{
+      const lr=new RegExp('(?:'+labels+')','i');
+      const lines=lineSet(normalized);
+      for(let i=0;i<lines.length;i++){
+        const m=lines[i].match(lr);
+        if(!m)continue;
+        let candidates=[
+          lines[i].slice((m.index||0)+m[0].length).replace(/^[\s:;\/\\\-–—|]+/,'').trim(),
+          lines[i+1]||'',lines[i+2]||''
+        ];
+        for(const candidate of candidates){
+          const c=cleanLine(candidate);
+          if(!c || LABEL_STOP.test(c))continue;
+          const pm=c.match(new RegExp('^('+pattern+')','i'));
+          if(pm && String(pm[1]||pm[0]).trim())return String(pm[1]||pm[0]).trim();
+        }
+      }
+    }catch(_){}
+    return base||'';
+  };
+
+  const baseExtractDateLike=window.extractDateLike;
+  window.extractDateLike=extractDateLike=function(text,labels=[]){
+    let v=baseExtractDateLike?baseExtractDateLike(text,labels):'';
+    if(v)return v;
+    const normalized=normalizeOCRText(text);
+    const dateRe=/((?:0?[1-9]|[12]\d|3[01])[\s\/.\-](?:0?[1-9]|1[0-2])[\s\/.\-](?:19|20)\d{2}|(?:19|20)\d{2}[\s\/.\-](?:0?[1-9]|1[0-2])[\s\/.\-](?:0?[1-9]|[12]\d|3[01]))/;
+    const lines=lineSet(normalized);
+    for(const label of labels){
+      let lr; try{lr=new RegExp(label,'i')}catch(_){continue}
+      for(let i=0;i<lines.length;i++){
+        if(!lr.test(lines[i]))continue;
+        for(const c of [lines[i],lines[i+1]||'',lines[i+2]||'']){
+          const m=c.match(dateRe); if(m)return m[1].replace(/\s+/g,'/');
+        }
+      }
+    }
+    return '';
+  };
+
+  const baseDetectIdentity=window.detectIdentityCountryAndType;
+  window.detectIdentityCountryAndType=detectIdentityCountryAndType=function(raw=''){
+    const base=baseDetectIdentity?baseDetectIdentity(raw):{country:'Inconnu',countryCode:'',type:'Document d’identité'};
+    const local=typeof detectCountryFromDocumentText==='function'?detectCountryFromDocumentText(raw,'identity'):null;
+    if(local?.score>0){
+      base.country=local.country;base.countryCode=local.code;base.detectedCountryCode=local.code;base.preferredCountryMatch=local.preferred;
+    }
+    const t=normalizeOCRText(raw).toUpperCase();
+    if(/DRIVING\s+LICEN[CS]E|DRIVER.?S\s+LICEN[CS]E|PERMIS\s+DE\s+CONDUIRE|F[ÜU]HRERSCHEIN|PERMISO\s+DE\s+CONDUCCI[ÓO]N|PATENTE\s+DI\s+GUIDA|RIJBEWIJS/.test(t))base.type='Permis de conduire';
+    else if(/BOARDING\s*PASS|CARTE\s+D['’ ]EMBARQUEMENT|E-?TICKET|BILLET\s+D['’ ]AVION/.test(t))base.type='Titre de voyage';
+    return base;
+  };
+
+  const baseExtractIntl=window.extractInternationalIdentityData;
+  window.extractInternationalIdentityData=extractInternationalIdentityData=function(raw=''){
+    const d=baseExtractIntl?baseExtractIntl(raw):{};
+    const text=normalizeOCRText(raw);
+    const names=extractIdentityNames(text);
+    const mrz=extractMRZData(text)||{};
+    d.surname=names.surname||d.surname||mrz.surname||'';
+    d.first=names.first||d.first||mrz.first||'';
+    d.nationality=d.nationality||extractLabeledValue(text,
+      "NATIONALIT[ÉE](?:\\s*\\/\\s*NATIONALITY)?|NATIONALITY(?:\\s*\\/\\s*NATIONALIT[ÉE])?|NACIONALIDAD|NAZIONALIT[ÄA]T|NAZIONALIT[ÀA]|NACIONALIDADE",
+      "[A-ZÀ-ÖØ-Þa-zà-öø-ÿ -]{2,35}")||mrz.nationality||'';
+    d.birthDate=normalizeIdentityDateForInput(d.birthDate||extractDateLike(text,[
+      "DATE DE NAISSANCE(?:\\s*\\/\\s*DATE OF BIRTH)?","DATE OF BIRTH(?:\\s*\\/\\s*DATE DE NAISSANCE)?","BIRTH DATE","DOB",
+      "FECHA DE NACIMIENTO","DATA DI NASCITA","GEBURTSDATUM","DATA DE NASCIMENTO"
+    ])||mrz.birthDate||'');
+    d.sex=normalizeIdentitySex(d.sex||extractLabeledValue(text,
+      "SEXE(?:\\s*\\/\\s*SEX)?|SEX(?:\\s*\\/\\s*SEXE)?|GENDER|SEXO|GESCHLECHT",
+      "[MFIX]|MALE|FEMALE|MASCULIN|F[ÉE]MININ")||mrz.sex||'');
+    d.documentNumber=d.documentNumber||extractLabeledValue(text,
+      "NUM[ÉE]RO(?:\\s*\\/\\s*DOCUMENT NO)?|DOCUMENT(?: NO| NUMBER)|DOC(?: NO| NUMBER)|ID(?: NO| NUMBER)|CARD(?: NO| NUMBER)|N[ÚU]MERO DE DOCUMENTO",
+      "[A-Z0-9<\\- ]{4,30}")||mrz.documentNumber||'';
+    if(d.documentNumber)d.documentNumber=String(d.documentNumber).replace(/[<> ]/g,'').trim();
+    return d;
+  };
+
+  function permitNumberedFields(raw=''){
+    const lines=lineSet(normalizeOCRText(raw));
+    const out={};
+    const valAfterNumber=(n)=>{
+      for(let i=0;i<lines.length;i++){
+        const m=lines[i].match(new RegExp('^\\s*'+n+'[.)]?\\s*(.*)$'));
+        if(!m)continue;
+        let v=cleanLine(m[1]);
+        if(v && !/^(SURNAME|NOM|NAME|PR[ÉE]NOM|DATE|PLACE|VALID)/i.test(v))return v;
+        if(lines[i+1] && !/^\s*\d+[.)]?\s*/.test(lines[i+1]))return cleanLine(lines[i+1]);
+      }
+      return '';
+    };
+    out.surname=safeName(valAfterNumber(1));
+    out.first=safeName(valAfterNumber(2));
+    const three=valAfterNumber(3);
+    const dm=three.match(/(?:0?[1-9]|[12]\d|3[01])[\/.\-](?:0?[1-9]|1[0-2])[\/.\-](?:19|20)\d{2}/);
+    if(dm)out.birthDate=normalizeIdentityDateForInput(dm[0]);
+    return out;
+  }
+
+  window.analyzePermitAutomatically=analyzePermitAutomatically=async function(){
+    const entries=[photoDraft.clientDocs?.permitFront,photoDraft.clientDocs?.permitBack].filter(x=>x?.src);
+    if(!entries.length||!window.Tesseract)return null;
+    try{
+      let combined='',candidates=[];
+      for(const entry of entries){
+        for(let pass=1;pass<=3;pass++){
+          try{
+            const txt=await runIdentityOCRPass(entry.src,'permis',pass);
+            combined+='\n'+txt;candidates.push(extractInternationalIdentityData(txt));
+          }catch(_){}
+        }
+        if(entry.originalSrc&&entry.originalSrc!==entry.src){
+          try{
+            const txt=await runIdentityOCRPass(entry.originalSrc,'permis original',2);
+            combined+='\n'+txt;candidates.push(extractInternationalIdentityData(txt));
+          }catch(_){}
+        }
+      }
+      candidates.push(extractInternationalIdentityData(combined));
+      let d=typeof mergeIdentityOCRCandidates==='function'?mergeIdentityOCRCandidates(candidates):candidates[candidates.length-1]||{};
+      const eu=permitNumberedFields(combined);
+      d.surname=d.surname||eu.surname||'';d.first=d.first||eu.first||'';d.birthDate=d.birthDate||eu.birthDate||'';
+      compareAndFillClientField('cname',d.surname,'permis');
+      compareAndFillClientField('cfirst',d.first,'permis');
+      compareAndFillClientField('cbirth',normalizeIdentityDateForInput(d.birthDate),'permis');
+      const sx=normalizeIdentitySex(d.sex);if(sx)compareAndFillClientField('csex',sx,'permis');
+      refreshClientSourceColors();
+      return d;
+    }catch(e){console.error('Analyse permis renforcée',e);locRecordDocumentError('permit','ocr_exception',e);return null}
+  };
+
+  function mergeTravelCandidates(list){
+    const vals=(list||[]).filter(Boolean);
+    if(!vals.length)return {};
+    const keys=['documentType','standard','provider','passenger','bookingRef','ticketNumber','journeyNumber','carrierCode','departureCode','arrivalCode','departureDate','departureTime','boardingTime','arrivalDate','arrivalTime','returnDate','returnTime','seat','gate','terminal','cabin','baggage','checkinSequence','barcodeType'];
+    const best=vals.slice().sort((a,b)=>travelTicketMeaningfulCount(b)-travelTicketMeaningfulCount(a))[0]||{};
+    const out={...best};
+    for(const k of keys){
+      if(out[k])continue;
+      const found=vals.map(v=>v[k]).find(v=>String(v||'').trim());
+      if(found)out[k]=found;
+    }
+    out.segments=vals.map(v=>v.segments||[]).find(x=>x.length)||best.segments||[];
+    out.rawText=vals.map(v=>v.rawText||'').join('\n').slice(0,5000);
+    return out;
+  }
+
+  window.analyzeTravelTicketAutomatically=analyzeTravelTicketAutomatically=async function(){
+    const stored=photoDraft.clientDocs?.travelTicket||{};
+    const src=stored.src||'';
+    if(!src)return null;
+    const meta=document.getElementById('meta_clientDocs_travelTicket');
+    if(meta)meta.textContent='🌍 Lecture renforcée du billet / titre de voyage…';
+    const barcodeRaw=await detectTravelBarcode(src);
+    const candidates=[];
+    let rawAll='';
+    if(window.Tesseract){
+      const langs=[...new Set([...priorityOCRLanguages(),'eng','fra','deu','spa','ita','por'])].slice(0,6);
+      const sources=[src];
+      if(stored.originalSrc&&stored.originalSrc!==src)sources.push(stored.originalSrc);
+      for(const source of sources){
+        for(let pass=1;pass<=3;pass++){
+          try{
+            const prepared=pass===1?source:await prepareIdentityOCRSource(source,pass===2?'gray':'binary');
+            const result=await Tesseract.recognize(prepared,langs.join('+'),{
+              tessedit_pageseg_mode:pass===1?'11':pass===2?'6':'12',
+              preserve_interword_spaces:'1',
+              logger:m=>{if(meta&&m.status==='recognizing text')meta.textContent='🌍 Lecture billet '+pass+'/3… '+Math.round((m.progress||0)*100)+'%'}
+            });
+            const txt=result?.data?.text||'';rawAll+='\n'+txt;
+            candidates.push(extractTravelTicketData(txt,barcodeRaw));
+            if(travelTicketMeaningfulCount(candidates[candidates.length-1])>=7)break;
+          }catch(_){}
+        }
+        if(candidates.some(x=>travelTicketMeaningfulCount(x)>=7))break;
+      }
+    }
+    candidates.push(extractTravelTicketData(rawAll,barcodeRaw));
+    const data=mergeTravelCandidates(candidates);
+    photoDraft.travelTicketData=data;
+    applyTravelTicketReference(data);
+    const holder=document.getElementById('travelTicketDetails');if(holder)holder.innerHTML=renderTravelTicketDetails(data);
+    const count=travelTicketMeaningfulCount(data);
+    if(meta)meta.textContent=count?'✅ Billet analysé — '+count+' information(s) fiables':'⚠️ Billet enregistré, lecture partielle';
+    if(!count)locRecordDocumentError('travelTicket','no_meaningful_field');
+    return data;
+  };
+
+  const baseAssess=window.assessStoredDocumentReadability;
+  window.assessStoredDocumentReadability=assessStoredDocumentReadability=async function(key=''){
+    const base=baseAssess?await baseAssess(key):{ok:false,reason:'Analyse indisponible'};
+    const stored=photoDraft.clientDocs?.[key]||{};
+    const txt=String(stored.ocrText||'').replace(/\s+/g,' ').trim();
+    const chars=txt.length;
+    let semantic=false;
+    if(/^idFront|idBack$/.test(key))semantic=/(NOM|SURNAME|PR[ÉE]NOM|GIVEN NAME|DATE OF BIRTH|NAISSANCE|NATIONALITY|NATIONALIT[ÉE]|P<|I<)/i.test(txt);
+    else if(/^permitFront|permitBack$/.test(key))semantic=/(DRIVING|DRIVER|LICEN[CS]E|PERMIS|F[ÜU]HRERSCHEIN|PATENTE|CONDUCCI[ÓO]N)/i.test(txt);
+    else if(key==='travelTicket')semantic=/(BOARDING|FLIGHT|PNR|TICKET|GATE|SEAT|DEPART|ARRIVAL|TRAIN|FERRY|BUS)/i.test(txt)||Boolean(photoDraft.travelTicketData&&travelTicketMeaningfulCount(photoDraft.travelTicketData)>=2);
+    else if(key==='addressProof'||key==='residenceProof')semantic=/(ADDRESS|ADRESSE|RUE|STREET|ROAD|AVENUE|FACTURE|INVOICE|BILL)/i.test(txt);
+    const ok=Boolean(base.ok||(chars>=28&&semantic));
+    if(!ok)locRecordDocumentError(key,'readability_failed',{chars,reason:base.reason||''});
+    return {...base,ok,reason:ok?'Photo lisible et contenu reconnu':base.reason};
+  };
+
+  function locRecordDocumentError(kind,code,detail){
+    try{
+      const key='locautomoto_document_learning_v3';
+      const db=JSON.parse(localStorage.getItem(key)||'{"counts":{},"recent":[]}');
+      const k=String(kind||'document')+'::'+String(code||'unknown');
+      db.counts[k]=(db.counts[k]||0)+1;
+      db.recent.unshift({at:new Date().toISOString(),kind:String(kind||''),code:String(code||''),detail:String(detail?.message||detail?.reason||JSON.stringify(detail||'')).slice(0,220)});
+      db.recent=db.recent.slice(0,80);
+      localStorage.setItem(key,JSON.stringify(db));
+    }catch(_){}
+  }
+  window.locRecordDocumentError=locRecordDocumentError;
+
+  // Enrichit les profils déjà présents sans remplacer les priorités pays existantes.
+  try{
+    const extra={
+      PT:{name:'Portugal',codes:['PRT','PT'],ocr:['por','eng'],identity:[/PORTUGAL/i,/\bPRT\b/i],permit:[/CARTA DE CONDU[ÇC][ÃA]O/i,/PORTUGAL/i],travel:[/PORTUGAL/i]},
+      NL:{name:'Pays-Bas',codes:['NLD','NL'],ocr:['nld','eng'],identity:[/NEDERLAND/i,/\bNLD\b/i],permit:[/RIJBEWIJS/i,/NEDERLAND/i],travel:[/NETHERLANDS|NEDERLAND/i]},
+      AT:{name:'Autriche',codes:['AUT','AT'],ocr:['deu','eng'],identity:[/REPUBLIK [ÖO]STERREICH/i,/\bAUT\b/i],permit:[/F[ÜU]HRERSCHEIN/i,/[ÖO]STERREICH/i],travel:[/AUSTRIA|[ÖO]STERREICH/i]},
+      IE:{name:'Irlande',codes:['IRL','IE'],ocr:['eng'],identity:[/IRELAND/i,/\bIRL\b/i],permit:[/DRIVING LICEN[CS]E/i,/IRELAND/i],travel:[/IRELAND/i]},
+      NZ:{name:'Nouvelle-Zélande',codes:['NZL','NZ'],ocr:['eng'],identity:[/NEW ZEALAND/i,/\bNZL\b/i],permit:[/DRIVER LICEN[CS]E/i,/NEW ZEALAND/i],travel:[/NEW ZEALAND/i]},
+      SG:{name:'Singapour',codes:['SGP','SG'],ocr:['eng'],identity:[/REPUBLIC OF SINGAPORE/i,/\bSGP\b/i],permit:[/DRIVING LICEN[CS]E/i,/SINGAPORE/i],travel:[/SINGAPORE/i]},
+      MG:{name:'Madagascar',codes:['MDG','MG'],ocr:['fra','eng'],identity:[/R[ÉE]PUBLIQUE DE MADAGASCAR/i,/\bMDG\b/i],permit:[/PERMIS DE CONDUIRE/i,/MADAGASCAR/i],travel:[/MADAGASCAR/i]},
+      RE:{name:'La Réunion',codes:['REU','RE'],ocr:['fra','eng'],identity:[/R[ÉE]UNION/i,/\bREU\b/i],permit:[/PERMIS DE CONDUIRE/i,/R[ÉE]UNION/i],travel:[/R[ÉE]UNION/i]}
+    };
+    Object.entries(extra).forEach(([k,v])=>{if(!LOC_DOCUMENT_COUNTRY_PROFILES[k])LOC_DOCUMENT_COUNTRY_PROFILES[k]=v});
+  }catch(_){}
+})();
+</script>
+<!-- LOC_DOC_ROBUSTNESS_V3_END -->
+
 </body>
 </html>
