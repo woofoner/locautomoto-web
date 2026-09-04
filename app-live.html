@@ -15968,41 +15968,38 @@ function documentCaptureHtml(existing={}){
 }
 function documentCardCapture(v,data){
  const src=data?.src||data||'';
+ const isIdentity=v.key==='idFront'||v.key==='idBack';
+ if(isIdentity){
+   return `<div class="document-card ${src?'done':''}" id="card_clientDocs_${v.key}" style="padding:10px 12px">
+     <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center">
+       <h4 style="margin:0">${v.icon} ${v.label}</h4>
+       <button type="button" class="btn small red" onclick="scannerDocumentIdentite('${v.key}')">📷 ${src?'REFAIRE':'SCANNER'}</button>
+     </div>
+     <input class="capture-input" id="inp_clientDocs_${v.key}" type="file" accept="image/*" capture="environment" onchange="captureDocumentFallback('${v.key}',this)">
+     <div class="document-preview" id="prev_clientDocs_${v.key}" style="display:${src?'grid':'none'};margin-top:8px">
+       ${src?`<img src="${src}">`:''}
+     </div>
+     <div class="document-actions" id="actions_clientDocs_${v.key}" style="display:${src?'flex':'none'};margin-top:8px">
+       <button type="button" class="btn small outline" onclick="removeCapturedDocument('${v.key}')">🗑️ SUPPRIMER</button>
+       ${v.key==='idFront'&&src?`<button type="button" class="btn small outline" onclick="runIdentityOCR('${v.key}')">🔎 RELIRE</button>`:''}
+     </div>
+     <div class="doc-quality" id="meta_clientDocs_${v.key}" style="display:${src?'block':'none'}">
+       ${src?'Document enregistré':''}
+     </div>
+   </div>`;
+ }
  return `<div class="document-card ${src?'done':''}" id="card_clientDocs_${v.key}">
    <h4>${v.icon} ${v.label}</h4>
    <div class="document-preview" id="prev_clientDocs_${v.key}">
      ${src?`<img src="${src}">`:'📷 Document non scanné'}
    </div>
-
-   <input
-     class="capture-input"
-     id="inp_clientDocs_${v.key}"
-     type="file"
-     accept="image/*"
-     capture="environment"
-     onchange="captureDocumentFallback('${v.key}',this)"
-   >
-
+   <input class="capture-input" id="inp_clientDocs_${v.key}" type="file" accept="image/*" capture="environment" onchange="captureDocumentFallback('${v.key}',this)">
    <div class="document-actions">
-     <button type="button" class="btn small red"
-       onclick="scannerDocumentIdentite('${v.key}')">
-       📷 ${src?'REFAIRE':'SCANNER'}
-     </button>
-
-     <button type="button" class="btn small outline"
-       onclick="removeCapturedDocument('${v.key}')">
-       🗑️
-     </button>
-
-     ${v.key==='idFront'&&src
-       ? `<button type="button" class="btn small outline" onclick="runIdentityOCR('${v.key}')">🔎 RELIRE</button>`
-       : ''
-     }
+     <button type="button" class="btn small red" onclick="scannerDocumentIdentite('${v.key}')">📷 ${src?'REFAIRE':'SCANNER'}</button>
+     <button type="button" class="btn small outline" onclick="removeCapturedDocument('${v.key}')">🗑️</button>
+     ${v.key==='idFront'&&src?`<button type="button" class="btn small outline" onclick="runIdentityOCR('${v.key}')">🔎 RELIRE</button>`:''}
    </div>
-
-   <div class="doc-quality" id="meta_clientDocs_${v.key}">
-     ${src?'Document enregistré':'Appuie sur SCANNER, prends la photo, puis LOCautomoto détecte les bords, recadre et améliore automatiquement le document'}
-   </div>
+   <div class="doc-quality" id="meta_clientDocs_${v.key}">${src?'Document enregistré':'Appuie sur SCANNER, prends la photo, puis LOCautomoto détecte les bords, recadre et améliore automatiquement le document'}</div>
  </div>`;
 }
 
@@ -16027,10 +16024,16 @@ function updateDocumentCard(key,data,message='Document enregistré'){
    }else{
      preview.textContent='📷 Document non scanné';
    }
+   if(key==='idFront'||key==='idBack')preview.style.display=src?'grid':'none';
  }
 
  if(src)card?.classList.add('done');
- if(meta)meta.textContent=message||'Document enregistré';
+ if(meta){
+   meta.textContent=message||'Document enregistré';
+   if(key==='idFront'||key==='idBack')meta.style.display=src?'block':'none';
+ }
+ const identityActions=document.getElementById(`actions_clientDocs_${key}`);
+ if(identityActions&&(key==='idFront'||key==='idBack'))identityActions.style.display=src?'flex':'none';
 
  // Règle globale documents client : aucune fenêtre "Refaire / Passer" n'est
  // déclenchée ici par défaut. La règle photo globale décide après analyse si
@@ -16051,9 +16054,17 @@ function removeCapturedDocument(key){
  const meta=document.getElementById(`meta_clientDocs_${key}`);
  const input=document.getElementById(`inp_clientDocs_${key}`);
 
- if(preview)preview.textContent='📷 Document non scanné';
+ if(preview){
+   preview.textContent='📷 Document non scanné';
+   if(key==='idFront'||key==='idBack')preview.style.display='none';
+ }
  if(card)card.classList.remove('done');
- if(meta)meta.textContent='Document supprimé';
+ if(meta){
+   meta.textContent='Document supprimé';
+   if(key==='idFront'||key==='idBack')meta.style.display='none';
+ }
+ const identityActions=document.getElementById(`actions_clientDocs_${key}`);
+ if(identityActions&&(key==='idFront'||key==='idBack'))identityActions.style.display='none';
  if(input)input.value='';
 
  if(key==='idFront' || key==='idBack'){
