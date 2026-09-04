@@ -16396,7 +16396,7 @@ function extractMRZData(raw=''){
 }
 
 
-function normalizeIdentityDateForInputfunction normalizeIdentityDateForInput(value=''){
+function normalizeIdentityDateForInput(value=''){
  const s=String(value||'').trim();
  if(!s)return '';
  let m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
@@ -16570,7 +16570,7 @@ function extractInternationalIdentityData(raw=''){
 }
 
 
-function nationalityFromDetectionfunction nationalityFromDetection(data){
+function nationalityFromDetection(data){
  const raw=String(data?.nationality||'').trim();
  const country=String(data?.country||'').trim();
 
@@ -16700,6 +16700,44 @@ function continueClientIdentityAutomatically(){
 window.identityAnalysisIsSufficient=identityAnalysisIsSufficient;
 window.continueClientIdentityAutomatically=continueClientIdentityAutomatically;
 
+
+function mergeIdentityOCRCandidates(candidates=[]){
+ const vals=candidates.filter(Boolean);
+ if(!vals.length)return {};
+ const choose=(field)=>{
+   const pool=vals.map(v=>String(v?.[field]||'').trim()).filter(Boolean);
+   if(!pool.length)return '';
+   const counts=new Map();
+   for(const v of pool){
+     const k=v.toLocaleLowerCase('fr').replace(/\s+/g,' ').trim();
+     counts.set(k,(counts.get(k)||0)+1);
+   }
+   return pool.sort((a,b)=>{
+     const ca=counts.get(a.toLocaleLowerCase('fr').replace(/\s+/g,' ').trim())||0;
+     const cb=counts.get(b.toLocaleLowerCase('fr').replace(/\s+/g,' ').trim())||0;
+     if(cb!==ca)return cb-ca;
+     return b.length-a.length;
+   })[0];
+ };
+ const best=vals.slice().sort((a,b)=>{
+   const score=x=>(x?.surname?3:0)+(x?.first?3:0)+(x?.birthDate?2:0)+(x?.documentNumber?2:0)+(x?.nationality?1:0)+(x?.sex?1:0)+(x?.country&&x.country!=='Inconnu'?1:0);
+   return score(b)-score(a);
+ })[0]||{};
+ return {
+   ...best,
+   surname:choose('surname')||best.surname||'',
+   first:choose('first')||best.first||'',
+   birthDate:choose('birthDate')||best.birthDate||'',
+   documentNumber:choose('documentNumber')||best.documentNumber||'',
+   nationality:choose('nationality')||best.nationality||'',
+   sex:choose('sex')||best.sex||'',
+   expiryDate:choose('expiryDate')||best.expiryDate||'',
+   issueDate:choose('issueDate')||best.issueDate||'',
+   address:choose('address')||best.address||''
+ };
+}
+window.mergeIdentityOCRCandidates=mergeIdentityOCRCandidates;
+
 async function analyzeIdentityDocumentsAutomatically(){
  const frontData=photoDraft.clientDocs?.idFront||null;
  const backData=photoDraft.clientDocs?.idBack||null;
@@ -16718,15 +16756,25 @@ async function analyzeIdentityDocumentsAutomatically(){
    if(front)sources.push({side:docType==='passport'?'page identité':'recto',src:front,raw:frontData?.raw||''});
    if(back&&docType!=='passport')sources.push({side:'verso',src:back,raw:backData?.raw||''});
    let combinedText='';
+   const aiCandidates=[];
    for(const item of sources){
      for(let pass=1;pass<=3;pass++){
-       try{combinedText+='\\n'+await runIdentityOCRPass(item.src,item.side,pass)}catch(_){}
+       try{
+         const txt=await runIdentityOCRPass(item.src,item.side,pass);
+         combinedText+='\\n'+txt;
+         aiCandidates.push(extractInternationalIdentityData(txt));
+       }catch(_){}
      }
      if(item.raw && item.raw!==item.src){
-       try{combinedText+='\\n'+await runIdentityOCRPass(item.raw,item.side+' original',2)}catch(_){}
+       try{
+         const txt=await runIdentityOCRPass(item.raw,item.side+' original',2);
+         combinedText+='\\n'+txt;
+         aiCandidates.push(extractInternationalIdentityData(txt));
+       }catch(_){}
      }
    }
-   let data=extractInternationalIdentityData(combinedText);
+   aiCandidates.push(extractInternationalIdentityData(combinedText));
+   let data=mergeIdentityOCRCandidates(aiCandidates);
 
    const select=document.getElementById('cidDocType');
    if(select && (select.value==='auto'||!select.value)){
