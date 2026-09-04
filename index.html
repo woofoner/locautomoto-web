@@ -15827,14 +15827,13 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
    const q=imageQuality(source);
    const detectedEdgeCount=(edges?.count||0);
    const manualCapture=!detectedEdges;
-   const identityStrict=['idFront','idBack'].includes(documentCameraKey);
 
-   // Pour l'identité, même le bouton manuel reste strict : 4 bords obligatoires.
-   // Aucun document d'identité ne doit être accepté/cadré approximativement.
-   const mustBeStrict=identityStrict || !manualCapture;
-   if(mustBeStrict){
-     const readable=Boolean(q?.ok && detectedEdgeCount===4);
-     if(!readable){
+   // Le bouton PRENDRE LA PHOTO doit toujours capturer.
+   // La détection des bords intervient ensuite sur l'image prise pour la recadrer.
+   // La capture automatique reste plus stricte.
+   if(!manualCapture){
+     const autoReadable=Boolean(q?.ok && detectedEdgeCount===4);
+     if(!autoReadable){
        documentCaptureBusy=false;
        documentStableFrames=0;
        const frame=document.getElementById('documentAutoFrame');
@@ -15843,10 +15842,9 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
        if(status){
          status.classList.remove('good');
          status.textContent=detectedEdgeCount<4
-           ? `4 bords obligatoires — détectés : ${detectedEdgeCount}/4`
+           ? `Recherche des 4 bords… ${detectedEdgeCount}/4`
            : 'Stabilise le téléphone et évite les reflets';
        }
-       cameraBeep(false);
        startAutomaticDocumentDetection();
        return;
      }
@@ -15855,9 +15853,6 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
    let output=source;
    if(edges?.count===4){
      output=cropDetectedDocument(source,edges);
-   }else if(edges?.count===3){
-     // 3 bords détectés : on conserve l'image complète et on poursuit.
-     output=source;
    }
 
    // Amélioration légère dédiée à l'OCR : contraste + luminosité + redimensionnement.
@@ -15876,17 +15871,21 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
    photoDraft.clientDocs??={};
    photoDraft.clientDocs[documentCameraKey]={
      src:image,
+     originalSrc:source.toDataURL('image/jpeg',0.9),
      takenAt:new Date().toISOString(),
      autoCamera:true,
-     autoEdges:true,
+     autoEdges:edges?.count===4,
      enhanced:true,
+     cropped:edges?.count===4,
      edgeCount:edges?.count||0
    };
 
    updateDocumentCard(
      documentCameraKey,
      photoDraft.clientDocs[documentCameraKey],
-     `${manualCapture?'✓ Photo prise':'✓ Scan automatique'} · ${detectedEdgeCount}/4 bords · image optimisée`
+     detectedEdgeCount===4
+       ? `${manualCapture?'✓ Photo prise':'✓ Scan automatique'} · 4/4 bords · recadrage bord à bord`
+       : `${manualCapture?'✓ Photo prise':'✓ Scan automatique'} · ${detectedEdgeCount}/4 bords · image conservée sans recadrage`
    );
 
    const capturedKey=documentCameraKey;
@@ -17523,21 +17522,6 @@ async function captureDocumentFallback(key,input){
  }
 
  if(result?.src){
-   const strictIdentity=['idFront','idBack'].includes(key);
-   const validIdentityScan=!strictIdentity || (result.cropped===true && Number(result.edgeCount||0)===4);
-
-   if(!validIdentityScan){
-     delete photoDraft.clientDocs[key];
-     updateDocumentCard(key,null,'');
-     if(meta){
-       meta.style.display='block';
-       meta.textContent='⚠️ 4 bords non détectés — refais le scan';
-     }
-     toast('4 bords obligatoires — refais le scan');
-     setTimeout(()=>scannerDocumentIdentite(key),180);
-     return;
-   }
-
    photoDraft.clientDocs[key]={
      ...photoDraft.clientDocs[key],
      src:result.src,
@@ -17561,17 +17545,6 @@ async function captureDocumentFallback(key,input){
 
    updateDocumentCard(key,photoDraft.clientDocs[key],msg);
  }else{
-   if(['idFront','idBack'].includes(key)){
-     delete photoDraft.clientDocs[key];
-     updateDocumentCard(key,null,'');
-     if(meta){
-       meta.style.display='block';
-       meta.textContent='⚠️ Scan non validé — 4 bords obligatoires';
-     }
-     toast('Scan non validé — refais la photo');
-     setTimeout(()=>scannerDocumentIdentite(key),180);
-     return;
-   }
    updateDocumentCard(
      key,
      photoDraft.clientDocs[key],
