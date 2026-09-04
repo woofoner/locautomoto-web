@@ -15827,12 +15827,14 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
    const q=imageQuality(source);
    const detectedEdgeCount=(edges?.count||0);
    const manualCapture=!detectedEdges;
+   const identityStrict=['idFront','idBack'].includes(documentCameraKey);
 
-   // Le bouton PRENDRE LA PHOTO doit toujours prendre la photo.
-   // La capture automatique, elle, reste stricte : 4 bords + netteté/lumière suffisantes.
-   if(!manualCapture){
-     const autoReadable=Boolean(q?.ok && detectedEdgeCount===4);
-     if(!autoReadable){
+   // Pour l'identité, même le bouton manuel reste strict : 4 bords obligatoires.
+   // Aucun document d'identité ne doit être accepté/cadré approximativement.
+   const mustBeStrict=identityStrict || !manualCapture;
+   if(mustBeStrict){
+     const readable=Boolean(q?.ok && detectedEdgeCount===4);
+     if(!readable){
        documentCaptureBusy=false;
        documentStableFrames=0;
        const frame=document.getElementById('documentAutoFrame');
@@ -15841,9 +15843,10 @@ async function takeDocumentAutoPhoto(detectedEdges=null){
        if(status){
          status.classList.remove('good');
          status.textContent=detectedEdgeCount<4
-           ? `Recherche des 4 bords… ${detectedEdgeCount}/4`
-           : 'Stabilise le téléphone et améliore la lumière';
+           ? `4 bords obligatoires — détectés : ${detectedEdgeCount}/4`
+           : 'Stabilise le téléphone et évite les reflets';
        }
+       cameraBeep(false);
        startAutomaticDocumentDetection();
        return;
      }
@@ -17520,6 +17523,21 @@ async function captureDocumentFallback(key,input){
  }
 
  if(result?.src){
+   const strictIdentity=['idFront','idBack'].includes(key);
+   const validIdentityScan=!strictIdentity || (result.cropped===true && Number(result.edgeCount||0)===4);
+
+   if(!validIdentityScan){
+     delete photoDraft.clientDocs[key];
+     updateDocumentCard(key,null,'');
+     if(meta){
+       meta.style.display='block';
+       meta.textContent='⚠️ 4 bords non détectés — refais le scan';
+     }
+     toast('4 bords obligatoires — refais le scan');
+     setTimeout(()=>scannerDocumentIdentite(key),180);
+     return;
+   }
+
    photoDraft.clientDocs[key]={
      ...photoDraft.clientDocs[key],
      src:result.src,
@@ -17543,6 +17561,17 @@ async function captureDocumentFallback(key,input){
 
    updateDocumentCard(key,photoDraft.clientDocs[key],msg);
  }else{
+   if(['idFront','idBack'].includes(key)){
+     delete photoDraft.clientDocs[key];
+     updateDocumentCard(key,null,'');
+     if(meta){
+       meta.style.display='block';
+       meta.textContent='⚠️ Scan non validé — 4 bords obligatoires';
+     }
+     toast('Scan non validé — refais la photo');
+     setTimeout(()=>scannerDocumentIdentite(key),180);
+     return;
+   }
    updateDocumentCard(
      key,
      photoDraft.clientDocs[key],
@@ -17872,7 +17901,7 @@ function cropDetectedDocument(source,edges){
  const r=Math.min(source.width,Math.round(edges.right.pos));
  const b=Math.min(source.height,Math.round(edges.bottom.pos));
  const w=r-x,h=b-y;
- if(w<source.width*.45||h<source.height*.35)return source;
+ if(w<source.width*.22||h<source.height*.16)return source;
  const out=document.createElement('canvas');
  const maxW=1600,scale=Math.min(1,maxW/w);
  out.width=Math.max(1,Math.round(w*scale));
