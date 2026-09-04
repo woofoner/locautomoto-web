@@ -40042,7 +40042,7 @@ html[data-theme="light"] #modalBox > .modal-header{
   const norm=s=>String(s||'').replace(/\r/g,'\n').replace(/[ \t]+/g,' ').replace(/\n{2,}/g,'\n').trim();
   const lines=s=>norm(s).split('\n').map(x=>x.replace(/[|¦]/g,'I').replace(/\s+/g,' ').trim()).filter(Boolean);
   const cleanName=s=>{
-    let v=String(s||'').replace(/[0-9<>{}\[\]_=+]/g,' ').replace(/\b(NOM|SURNAME|LAST NAME|FAMILY NAME|PR[ÉE]NOMS?|GIVEN NAMES?|FIRST NAME|FORENAMES?)\b/ig,' ').replace(/\s+/g,' ').trim();
+    let v=String(s||'').replace(/[0-9<>{}\[\]_=+]/g,' ').replace(/\b(NOM|SURNAME|LAST NAME|FAMILY NAME|PR[ÉE]NOM(?:S|\\(S\\))?|GIVEN NAME(?:S|\\(S\\))?|FIRST NAME|FORENAMES?)\b/ig,' ').replace(/\s+/g,' ').trim();
     v=cleanOCRName(v);
     if(!v||v.length<2||labelStop.test(v))return '';
     return titleCaseName(v);
@@ -40121,7 +40121,7 @@ html[data-theme="light"] #modalBox > .modal-header{
       /(?:^|\b)COGNOME\b/i,/(?:^|\b)NACHNAME\b/i,/(?:^|\b)SOBRENOME\b/i
     ],'name')||cleanName(mrz.surname);
     const first=afterLabel(raw,[
-      /(?:^|\b)PR[ÉE]NOMS?(?:\s*\/\s*GIVEN\s*NAMES?)?\b/i,/(?:^|\b)GIVEN\s*NAMES?(?:\s*\/\s*PR[ÉE]NOMS?)?\b/i,
+      /(?:^|\b)PR[ÉE]NOM(?:S|\\(S\\))?(?:\s*\/\s*GIVEN\s*NAMES?)?\b/i,/(?:^|\b)GIVEN\s*NAMES?(?:\s*\/\s*PR[ÉE]NOM(?:S|\\(S\\))?)?\b/i,
       /(?:^|\b)FIRST\s*NAME\b/i,/(?:^|\b)FORENAMES?\b/i,/(?:^|\b)NOMBRES?\b/i,
       /(?:^|\b)VORNAME\b/i
     ],'name')||cleanName(mrz.first);
