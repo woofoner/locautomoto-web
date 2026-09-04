@@ -39769,5 +39769,246 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
 })();
 </script>
 
+
+<script id="LOC_CLIENT_FLOW_CONTROLLER_20260904">
+/* ===== LOCautomoto — contrôleur unique Nouveau client 1→5 ===== */
+(function(){
+  const SCOPE='client';
+  let reached=1;
+
+  function current(){
+    return Number(typeof clientWizardStep!=='undefined' ? clientWizardStep : (window.clientWizardStep||1))||1;
+  }
+
+  function setCurrent(n){
+    if(typeof clientWizardStep!=='undefined') clientWizardStep=n;
+    window.clientWizardStep=n;
+  }
+
+  function refreshProgress(){
+    const cur=current();
+    document.querySelectorAll('[data-step-dot]').forEach(el=>{
+      const n=Number(el.dataset.stepDot||0);
+      const locked=n>reached;
+      el.classList.toggle('active',n===cur);
+      el.classList.toggle('done',n<cur);
+      el.classList.toggle('wizard-step-locked',locked);
+      el.setAttribute('aria-disabled',locked?'true':'false');
+      el.title=locked?'Étape non encore atteinte':`Aller à l’étape ${n}`;
+      if(el.tagName!=='BUTTON')el.setAttribute('tabindex',locked?'-1':'0');
+    });
+    const label=document.getElementById('clientWizardLabel');
+    if(label)label.textContent=`Étape ${cur} sur 5`;
+  }
+
+  function show(step){
+    const target=Math.max(1,Math.min(5,Number(step)||1));
+    const cur=current();
+
+    // Progression normale : une seule étape en avant à la fois.
+    if(target>reached && target!==cur+1){
+      toast('Cette étape n’est pas encore disponible');
+      refreshProgress();
+      return false;
+    }
+
+    if(target===cur+1) reached=Math.max(reached,target);
+    if(target<=reached){
+      setCurrent(target);
+      document.querySelectorAll('.client-wizard-step').forEach(el=>el.classList.remove('active'));
+      document.getElementById(`clientWizardStep${target}`)?.classList.add('active');
+      refreshProgress();
+
+      if(target===4){
+        try{refreshClientSourceColors?.()}catch(e){}
+      }
+      if(target===5){
+        try{renderClientWizardSummary?.()}catch(e){}
+      }
+      if(target===1 && photoDraft?.travelTicketData){
+        setTimeout(()=>{try{applyTravelTicketReference?.(photoDraft.travelTicketData)}catch(e){}},30);
+      }
+      const box=document.getElementById('modalBox');
+      if(box)box.scrollTop=0;
+      return true;
+    }
+    return false;
+  }
+
+  function next(){
+    const step=current();
+
+    if(step===1){
+      const choice=document.getElementById('ctourist')?.value||'non';
+      if(choice==='oui' && !photoDraft.clientDocs?.travelTicket && !photoDraft.travelTicketSkipped){
+        toast('Prends la photo du billet / titre de voyage ou utilise PASSER');
+        scannerDocumentIdentite('travelTicket');
+        return;
+      }
+      show(2);
+      return;
+    }
+
+    if(step===2){
+      const type=document.getElementById('cidDocType')?.value||'id';
+      const missing=[];
+      if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':"identité recto");
+      if(type==='id' && !photoDraft.clientDocs?.idBack)missing.push('identité verso');
+      if(missing.length){
+        confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,3);
+        return;
+      }
+      show(3);
+      return;
+    }
+
+    if(step===3){
+      const missing=[];
+      if(!photoDraft.clientDocs?.permitFront)missing.push('permis recto');
+      if(!photoDraft.clientDocs?.permitBack)missing.push('permis verso');
+      if(missing.length){
+        confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,4);
+        return;
+      }
+      Promise.resolve(typeof analyzePermitAutomatically==='function' ? analyzePermitAutomatically() : null)
+        .finally(()=>show(4));
+      return;
+    }
+
+    if(step===4){
+      const name=document.getElementById('cname')?.value.trim()||'';
+      const first=document.getElementById('cfirst')?.value.trim()||'';
+      if(!name||!first){
+        toast('Nom et prénom requis');
+        try{refreshClientSourceColors?.()}catch(e){}
+        return;
+      }
+      const email=document.getElementById('cemail')?.value.trim()||'';
+      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        toast('Adresse e-mail invalide');
+        return;
+      }
+      try{refreshClientSourceColors?.()}catch(e){}
+      show(5);
+    }
+  }
+
+  function prev(){
+    const step=current();
+    if(step>1)show(step-1);
+  }
+
+  function chooseTourist(value){
+    const v=value==='oui'?'oui':'non';
+    const field=document.getElementById('ctourist');
+    if(field)field.value=v;
+    updateTouristTicketVisibility();
+
+    if(v==='non'){
+      photoDraft.travelTicketSkipped=true;
+      setTimeout(()=>show(2),80);
+      return;
+    }
+
+    photoDraft.travelTicketSkipped=false;
+    toast('Touriste — photo du billet / titre de voyage');
+    setTimeout(()=>scannerDocumentIdentite('travelTicket'),120);
+  }
+
+  function continueDocument(key=''){
+    document.getElementById('photoReviewOverlay')?.remove();
+
+    if(key==='travelTicket'){
+      show(2);
+      return true;
+    }
+    if(key==='idFront'){
+      const type=document.getElementById('cidDocType')?.value||'id';
+      if(type==='id') setTimeout(()=>scannerDocumentIdentite('idBack'),120);
+      else show(3);
+      return true;
+    }
+    if(key==='idBack'){
+      show(3);
+      return true;
+    }
+    if(key==='permitFront'){
+      setTimeout(()=>scannerDocumentIdentite('permitBack'),120);
+      return true;
+    }
+    if(key==='permitBack'){
+      Promise.resolve(typeof analyzePermitAutomatically==='function' ? analyzePermitAutomatically() : null)
+        .finally(()=>show(4));
+      return true;
+    }
+    if(key==='addressProof' || key==='residenceProof'){
+      toast('Justificatif enregistré');
+      return true;
+    }
+    return false;
+  }
+
+  function passDocument(key=''){
+    document.getElementById('photoReviewOverlay')?.remove();
+
+    if(photoDraft.clientDocs && key){
+      delete photoDraft.clientDocs[key];
+      const preview=document.getElementById(`prev_clientDocs_${key}`);
+      const card=document.getElementById(`card_clientDocs_${key}`);
+      const meta=document.getElementById(`meta_clientDocs_${key}`);
+      if(preview)preview.textContent='📷 Document non scanné';
+      if(card)card.classList.remove('done');
+      if(meta)meta.textContent='Document non renseigné';
+    }
+
+    if(key==='travelTicket'){
+      photoDraft.travelTicketSkipped=true;
+      show(2);
+      return;
+    }
+    if(/^id/.test(key)){ show(2); return; }
+    if(/^permit/.test(key)){ show(3); return; }
+    if(key==='addressProof' || key==='residenceProof'){ show(4); return; }
+    show(current());
+  }
+
+  // Réinitialise les étapes atteintes à chaque ouverture d'un dossier client.
+  const baseClientForm=window.clientForm;
+  if(typeof baseClientForm==='function'){
+    window.clientForm=clientForm=function(...args){
+      reached=1;
+      const r=baseClientForm.apply(this,args);
+      setCurrent(1);
+      setTimeout(refreshProgress,0);
+      return r;
+    };
+  }
+
+  // Autorité finale : un seul contrôleur actif pour le parcours client.
+  window.clientWizardShowStep=clientWizardShowStep=show;
+  window.clientWizardNext=clientWizardNext=next;
+  window.clientWizardPrev=clientWizardPrev=prev;
+  window.chooseTouristStatus=chooseTouristStatus=chooseTourist;
+  window.continueReviewedDocument=continueReviewedDocument=continueDocument;
+  window.passReviewedDocumentToStart=passReviewedDocumentToStart=passDocument;
+
+  // Empêche uniquement le clic manuel vers une étape pas encore atteinte.
+  document.addEventListener('click',e=>{
+    const dot=e.target.closest('[data-step-dot]');
+    if(!dot)return;
+    const n=Number(dot.dataset.stepDot||0);
+    if(n>reached){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      toast('Cette étape n’est pas encore disponible');
+    }
+  },true);
+
+  setCurrent(current());
+  reached=Math.max(1,current());
+  setTimeout(refreshProgress,0);
+})();
+</script>
+
 </body>
 </html>
