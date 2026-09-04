@@ -16631,39 +16631,37 @@ window.identityAnalysisIsSufficient=identityAnalysisIsSufficient;
 window.continueClientIdentityAutomatically=continueClientIdentityAutomatically;
 
 async function analyzeIdentityDocumentsAutomatically(){
- const front=photoDraft.clientDocs?.idFront?.src||'';
- const back=photoDraft.clientDocs?.idBack?.src||'';
+ const frontData=photoDraft.clientDocs?.idFront||null;
+ const backData=photoDraft.clientDocs?.idBack||null;
+ const front=frontData?.src||'', back=backData?.src||'';
  const docType=document.getElementById('cidDocType')?.value||'id';
-
  if(!front && !back)return;
-
  if(!window.Tesseract){
    setOCRStatus("ℹ️ Photos enregistrées. L'analyse automatique internationale nécessite une connexion internet pour charger le module OCR.",'bad');
    const reviewKey=back?'idBack':'idFront';
    setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
    return;
  }
-
  try{
-   setOCRStatus(front&&back
-     ? '🌍 Analyse automatique internationale du recto et du verso…'
-     : front
-       ? '🌍 Analyse automatique internationale du recto…'
-       : '🌍 Analyse automatique internationale du verso…');
-
+   setOCRStatus(front&&back?'🌍 Analyse automatique renforcée du recto et du verso…':front?'🌍 Analyse automatique renforcée du recto…':'🌍 Analyse automatique renforcée du verso…');
    const sources=[];
-   if(front)sources.push({side:docType==='passport'?'page identité':'recto',src:front});
-   if(back&&docType!=='passport')sources.push({side:'verso',src:back});
-
+   if(front)sources.push({side:docType==='passport'?'page identité':'recto',src:front,raw:frontData?.raw||''});
+   if(back&&docType!=='passport')sources.push({side:'verso',src:back,raw:backData?.raw||''});
    let combinedText='';
-
-   for(const item of sources){
-     combinedText += '\n' + await runIdentityOCRPass(item.src,item.side,1);
-   }
-
+   for(const item of sources)combinedText+='\n'+await runIdentityOCRPass(item.src,item.side,1);
    let data=extractInternationalIdentityData(combinedText);
-
-   // Détection automatique du type de document après lecture.
+   if(!identityAnalysisIsSufficient(data)){
+     for(const item of sources)combinedText+='\n'+await runIdentityOCRPass(item.src,item.side,2);
+     data=extractInternationalIdentityData(combinedText);
+   }
+   if(!identityAnalysisIsSufficient(data)){
+     for(const item of sources){
+       if(item.raw && item.raw!==item.src){
+         try{combinedText+='\n'+await runIdentityOCRPass(item.raw,item.side+' original',2)}catch(_){}
+       }
+     }
+     data=extractInternationalIdentityData(combinedText);
+   }
    const select=document.getElementById('cidDocType');
    if(select && (select.value==='auto'||!select.value)){
      const detectedType=String(data.type||'').toLowerCase();
@@ -16671,12 +16669,9 @@ async function analyzeIdentityDocumentsAutomatically(){
      else if(detectedType.includes('visa'))select.value='visa';
      else if(detectedType.includes('identit'))select.value='id';
      else select.value='other';
-     updateIdentityDocumentMode();
-     updateClientWizardIdentityCards();
+     updateIdentityDocumentMode(); updateClientWizardIdentityCards();
    }
-
    fillDetectedIdentityData(data);
-
    const summary=[
      data.country && data.country!=='Inconnu' ? `🌐 ${esc(data.country)}` : '🌐 Pays non identifié',
      data.type ? `🪪 ${esc(data.type)}` : '',
@@ -16686,34 +16681,24 @@ async function analyzeIdentityDocumentsAutomatically(){
      data.birthDate ? `🎂 ${esc(data.birthDate)}` : '',
      data.expiryDate ? `📅 Expire : ${esc(data.expiryDate)}` : ''
    ].filter(Boolean);
-
    if(identityAnalysisIsSufficient(data)){
-     setOCRStatus(
-       `✅ Détection automatique validée<br>${summary.join('<br>')}<br><span class="muted">Photo acceptée automatiquement — aucune confirmation nécessaire.</span>`,
-       'good'
-     );
-     cameraBeep(true);
-     toast('Document reconnu et informations préremplies');
+     setOCRStatus(`✅ Détection automatique validée<br>${summary.join('<br>')}<br><span class="muted">Recadrage + lectures OCR multiples appliqués automatiquement.</span>`,'good');
+     cameraBeep(true); toast('Document reconnu et informations préremplies');
      setTimeout(()=>continueClientIdentityAutomatically(),140);
    }else{
-     setOCRStatus(
-       '⚠️ Photo enregistrée. Deux lectures OCR ont été tentées, mais les champs d’identité essentiels restent insuffisants.',
-       'bad'
-     );
+     setOCRStatus('⚠️ Photo enregistrée. Plusieurs lectures OCR ont été tentées, mais les champs essentiels restent insuffisants.','bad');
      const reviewKey=back?'idBack':'idFront';
      setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
    }
  }catch(e){
    console.error('Analyse automatique internationale',e);
-   setOCRStatus(
-     '⚠️ Les photos sont enregistrées, mais l’analyse automatique internationale a échoué.',
-     'bad'
-   );
+   setOCRStatus('⚠️ Les photos sont enregistrées, mais l’analyse automatique renforcée a échoué.','bad');
    const reviewKey=(photoDraft.clientDocs?.idBack?.src)?'idBack':'idFront';
    setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
  }
 }
 window.analyzeIdentityDocumentsAutomatically=analyzeIdentityDocumentsAutomatically;
+
 
 async function convertPhotoForBrowser(file,maxW=1600,quality=.88){
  const raw=await new Promise((resolve,reject)=>{
@@ -17803,66 +17788,74 @@ function detectDocumentEdges(canvas){
  const w=canvas.width,h=canvas.height;
  const ctx=canvas.getContext('2d',{willReadFrequently:true});
  const im=ctx.getImageData(0,0,w,h).data;
-
  const gray=(x,y)=>{
-   x=Math.max(0,Math.min(w-1,x|0));
-   y=Math.max(0,Math.min(h-1,y|0));
-   const i=(y*w+x)*4;
-   return .2126*im[i]+.7152*im[i+1]+.0722*im[i+2];
+   x=Math.max(0,Math.min(w-1,x|0)); y=Math.max(0,Math.min(h-1,y|0));
+   const i=(y*w+x)*4; return .2126*im[i]+.7152*im[i+1]+.0722*im[i+2];
  };
-
- // Plusieurs écarts de pixels : plus fiable pour un bord fin, épais ou légèrement flou.
  const colScore=x=>{
    let sum=0,n=0;
-   for(let y=Math.round(h*.08);y<h*.92;y+=2){
+   for(let y=Math.round(h*.03);y<h*.97;y+=Math.max(2,Math.round(h/420))){
      const a=Math.abs(gray(x+2,y)-gray(x-2,y));
-     const b=Math.abs(gray(x+5,y)-gray(x-5,y))*.72;
-     sum+=Math.max(a,b); n++;
+     const b=Math.abs(gray(x+6,y)-gray(x-6,y))*.78;
+     const c=Math.abs(gray(x+11,y)-gray(x-11,y))*.50;
+     sum+=Math.max(a,b,c);n++;
    }
    return sum/Math.max(1,n);
  };
  const rowScore=y=>{
    let sum=0,n=0;
-   for(let x=Math.round(w*.08);x<w*.92;x+=2){
+   for(let x=Math.round(w*.03);x<w*.97;x+=Math.max(2,Math.round(w/420))){
      const a=Math.abs(gray(x,y+2)-gray(x,y-2));
-     const b=Math.abs(gray(x,y+5)-gray(x,y-5))*.72;
-     sum+=Math.max(a,b); n++;
+     const b=Math.abs(gray(x,y+6)-gray(x,y-6))*.78;
+     const c=Math.abs(gray(x,y+11)-gray(x,y-11))*.50;
+     sum+=Math.max(a,b,c);n++;
    }
    return sum/Math.max(1,n);
  };
-
- const best=(a,b,fn)=>{
-   let bi=a,bs=-1;
-   for(let i=a;i<=b;i+=2){
-     const q=fn(i);
-     if(q>bs){bs=q;bi=i}
+ const peaks=(start,end,fn,count=18)=>{
+   const arr=[],step=Math.max(2,Math.round((end-start)/260));
+   for(let p=start;p<=end;p+=step)arr.push({pos:p,score:fn(p)});
+   arr.sort((a,b)=>b.score-a.score);
+   const kept=[],minGap=Math.max(8,Math.round(Math.min(w,h)*.018));
+   for(const item of arr){
+     if(kept.every(k=>Math.abs(k.pos-item.pos)>=minGap))kept.push(item);
+     if(kept.length>=count)break;
    }
-   return {pos:bi,score:bs};
+   return kept;
  };
-
- // Zones plus larges qu'avant : le document n'a plus besoin d'être exactement centré.
- const left=best(Math.round(w*.005),Math.round(w*.40),colScore);
- const right=best(Math.round(w*.60),Math.round(w*.995),colScore);
- const top=best(Math.round(h*.005),Math.round(h*.40),rowScore);
- const bottom=best(Math.round(h*.60),Math.round(h*.995),rowScore);
-
- const scores=[left.score,right.score,top.score,bottom.score].filter(Number.isFinite);
- const avg=scores.reduce((a,b)=>a+b,0)/Math.max(1,scores.length);
- // Seuil adaptatif avec plancher bas pour conserver les bords peu contrastés.
- const threshold=Math.max(3.2,Math.min(6.0,avg*.42));
-
- const ok={
-   left:left.score>=threshold,
-   right:right.score>=threshold,
-   top:top.score>=threshold,
-   bottom:bottom.score>=threshold
- };
-
- return{
-   left,right,top,bottom,ok,
-   threshold,
-   count:Object.values(ok).filter(Boolean).length
- };
+ const xs=peaks(Math.round(w*.005),Math.round(w*.995),colScore);
+ const ys=peaks(Math.round(h*.005),Math.round(h*.995),rowScore);
+ let best=null;
+ for(const l of xs)for(const r of xs){
+   if(r.pos<=l.pos)continue;
+   const rw=r.pos-l.pos;
+   if(rw<w*.18||rw>w*.97)continue;
+   for(const t of ys)for(const b of ys){
+     if(b.pos<=t.pos)continue;
+     const rh=b.pos-t.pos;
+     if(rh<h*.12||rh>h*.97)continue;
+     const ratio=rw/rh;
+     if(ratio<1.18||ratio>1.95)continue;
+     const area=(rw*rh)/(w*h);
+     if(area<.035)continue;
+     const ratioScore=1-Math.min(1,Math.abs(ratio-1.586)/.55);
+     const edge=(l.score+r.score+t.score+b.score)/4;
+     const centerX=(l.pos+r.pos)/2,centerY=(t.pos+b.pos)/2;
+     const centerPenalty=(Math.abs(centerX-w/2)/w+Math.abs(centerY-h/2)/h)*.45;
+     const score=edge*(.72+.28*ratioScore)*(1-centerPenalty)+Math.min(.8,area)*2.2;
+     if(!best||score>best.score)best={l,r,t,b,score,ratio,area};
+   }
+ }
+ if(!best){
+   const left=xs[0]||{pos:0,score:0},right=xs[1]||{pos:w-1,score:0};
+   const top=ys[0]||{pos:0,score:0},bottom=ys[1]||{pos:h-1,score:0};
+   return {left,right,top,bottom,ok:{left:false,right:false,top:false,bottom:false},threshold:Infinity,count:0};
+ }
+ const scores=[best.l.score,best.r.score,best.t.score,best.b.score],avg=scores.reduce((a,b)=>a+b,0)/4;
+ const threshold=Math.max(2.7,Math.min(7.5,avg*.52));
+ const ok={left:best.l.score>=threshold,right:best.r.score>=threshold,top:best.t.score>=threshold,bottom:best.b.score>=threshold};
+ const count=Object.values(ok).filter(Boolean).length;
+ return {left:best.l,right:best.r,top:best.t,bottom:best.b,ok,threshold,count,ratio:best.ratio,area:best.area,confidence:Math.max(0,Math.min(100,Math.round(best.score*8)))};
 }
 function cropDetectedDocument(source,edges){
  /* Recadrage strict : les 4 bords réellement détectés deviennent exactement
