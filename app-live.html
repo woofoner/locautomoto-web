@@ -16515,6 +16515,80 @@ async function prepareIdentityOCRSource(src,mode='normal'){
 }
 window.prepareIdentityOCRSource=prepareIdentityOCRSource;
 
+
+async function runOCRRegion(src,box,label='zone'){
+ if(!src||!window.Tesseract)return '';
+ return await new Promise(resolve=>{
+   const img=new Image();
+   img.onload=async()=>{
+     try{
+       const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+       const x=Math.max(0,Math.round(iw*box.x)), y=Math.max(0,Math.round(ih*box.y));
+       const w=Math.max(1,Math.round(iw*box.w)), h=Math.max(1,Math.round(ih*box.h));
+       const c=document.createElement('canvas'); c.width=w; c.height=h;
+       const ctx=c.getContext('2d',{willReadFrequently:true});
+       ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+       ctx.drawImage(img,x,y,w,h,0,0,w,h);
+       try{ctx.filter='contrast(1.35) brightness(1.08)';ctx.drawImage(c,0,0);ctx.filter='none';}catch(_){}
+       const r=await Tesseract.recognize(c.toDataURL('image/jpeg',.95),'fra+eng',{
+         tessedit_pageseg_mode:'6',
+         preserve_interword_spaces:'1'
+       });
+       resolve(normalizeOCRText(r?.data?.text||''));
+     }catch(e){console.warn('OCR zone '+label,e);resolve('')}
+   };
+   img.onerror=()=>resolve('');
+   img.src=src;
+ });
+}
+
+function frenchCniZoneMap(){
+ // CNI française format carte bancaire (recto). Coordonnées relatives.
+ return {
+   surname:{x:.34,y:.18,w:.61,h:.12},
+   first:{x:.34,y:.30,w:.61,h:.13},
+   birthDate:{x:.34,y:.45,w:.31,h:.11},
+   sex:{x:.67,y:.45,w:.11,h:.11},
+   nationality:{x:.79,y:.45,w:.17,h:.11},
+   documentNumber:{x:.34,y:.58,w:.42,h:.11}
+ };
+}
+
+function cleanZoneName(raw=''){
+ let t=normalizeOCRText(raw)
+   .replace(/\b(NOM|SURNAME|FAMILY NAME|PR[ÉE]NOM(?:S)?|GIVEN NAME(?:S)?|FIRST NAME)\b/gi,' ')
+   .replace(/[|/]+/g,' ')
+   .replace(/\s+/g,' ')
+   .trim();
+ return titleCaseName(t);
+}
+
+async function runFrenchCniZoneOCR(src){
+ const z=frenchCniZoneMap();
+ const [surnameRaw,firstRaw,birthRaw,sexRaw,natRaw,docRaw]=await Promise.all([
+   runOCRRegion(src,z.surname,'nom'),
+   runOCRRegion(src,z.first,'prénom'),
+   runOCRRegion(src,z.birthDate,'date de naissance'),
+   runOCRRegion(src,z.sex,'sexe'),
+   runOCRRegion(src,z.nationality,'nationalité'),
+   runOCRRegion(src,z.documentNumber,'numéro document')
+ ]);
+ const date=(birthRaw.match(/(?:0?[1-9]|[12]\d|3[01])[\/\.\-](?:0?[1-9]|1[0-2])[\/\.\-](?:19|20)\d{2}|(?:19|20)\d{2}[\/\.\-](?:0?[1-9]|1[0-2])[\/\.\-](?:0?[1-9]|[12]\d|3[01])/)||[])[0]||'';
+ const sex=(sexRaw.match(/\b(M|F|X|MASCULIN|F[ÉE]MININ|MALE|FEMALE)\b/i)||[])[0]||'';
+ const nat=(natRaw.match(/\b(FRAN[ÇC]AISE?|FRA|FRENCH)\b/i)||[])[0]||natRaw;
+ const doc=(docRaw.match(/\b[A-Z0-9]{6,20}\b/i)||[])[0]||'';
+ return {
+   country:'France',countryCode:'FR',type:"Carte nationale d'identité",
+   surname:cleanZoneName(surnameRaw),
+   first:cleanZoneName(firstRaw),
+   birthDate:normalizeIdentityDateForInput(date),
+   sex:normalizeIdentitySex(sex),
+   nationality:/FRA|FRENCH|FRAN/i.test(nat)?'Française':String(nat||'').trim(),
+   documentNumber:doc
+ };
+}
+window.runFrenchCniZoneOCR=runFrenchCniZoneOCR;
+
 async function runIdentityOCRPass(src,side='document',pass=1){
  const modes={1:'normal',2:'gray',3:'binary'};
  const mode=modes[pass]||'normal';
