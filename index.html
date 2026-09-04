@@ -40050,182 +40050,6 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
 </script>
 
 
-<script id="locautomoto-simple-identity-ocr">
-(function(){
-  let locIdentityTimer=null;
-  let locIdentityRun=0;
-
-  function cleanLine(v=''){
-    return String(v||'').replace(/\r/g,'').replace(/[\t ]+/g,' ').trim();
-  }
-  function cleanName(v=''){
-    let s=String(v||'')
-      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ'’ -]/g,' ')
-      .replace(/\s+/g,' ').trim();
-    const parts=s.split(' ').filter(Boolean);
-    while(parts.length>1 && /^[A-Za-zÀ-ÖØ-öø-ÿ]$/.test(parts[0]) && parts[1].length>=3) parts.shift();
-    s=parts.join(' ');
-    return s.toLowerCase().replace(/(^|[\s'’-])([a-zà-öø-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
-  }
-  const BAD=new Set(['NOM','SURNAME','NAME','LAST NAME','LASTNAME','FAMILY NAME','FAMILYNAME','PRÉNOM','PRENOM','PRÉNOMS','PRENOMS','GIVEN NAME','GIVEN NAMES','GIVENNAME','GIVENNAMES','FIRST NAME','FIRSTNAME','SEXE','SEX','NATIONALITÉ','NATIONALITE','NATIONALITY']);
-  function goodName(v=''){
-    const s=cleanName(v);
-    const c=s.replace(/[\s'’-]/g,'');
-    return c.length>=2 && !BAD.has(s.toUpperCase()) && !/^[MFHX]$/i.test(c);
-  }
-  function nextUseful(lines,i){
-    for(let j=i+1;j<Math.min(lines.length,i+4);j++){
-      const v=cleanName(lines[j]);
-      if(goodName(v) && !/^(DATE|NATIONAL|SEXE|SEX|NÉE|NEE|BIRTH|NOM|SURNAME|PRÉNOM|PRENOM|GIVEN)/i.test(v)) return v;
-    }
-    return '';
-  }
-  function valueByLabel(lines,labelRx){
-    for(let i=0;i<lines.length;i++){
-      const l=lines[i];
-      if(!labelRx.test(l)) continue;
-      let v=cleanLine(l.replace(labelRx,'').replace(/^\s*[:.\-–—]+\s*/,'').trim());
-      v=cleanName(v);
-      if(goodName(v)) return v;
-      v=nextUseful(lines,i);
-      if(goodName(v)) return v;
-    }
-    return '';
-  }
-  function parseDate(text=''){
-    const m=String(text).match(/\b(0?[1-9]|[12]\d|3[01])[\/.\-](0?[1-9]|1[0-2])[\/.\-]((?:19|20)\d{2})\b/);
-    if(!m)return '';
-    return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
-  }
-  function parseIdentity(text=''){
-    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
-    const all=lines.join('\n');
-    let surname=valueByLabel(lines,/^(?:NOM|SURNAME|LAST\s*NAME|FAMILY\s*NAME)\b\s*/i);
-    let first=valueByLabel(lines,/^(?:PR[ÉE]NOM(?:S)?|GIVEN\s*NAME(?:S)?|FIRST\s*NAME)\b\s*/i);
-    if(!surname){
-      const m=all.match(/(?:^|\n).*?(?:NOM|SURNAME|LAST\s*NAME|FAMILY\s*NAME)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{1,35})(?:\n|$)/im);
-      if(m && goodName(m[1])) surname=cleanName(m[1]);
-    }
-    if(!first){
-      const m=all.match(/(?:^|\n).*?(?:PR[ÉE]NOM(?:S)?|GIVEN\s*NAME(?:S)?|FIRST\s*NAME)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{1,45})(?:\n|$)/im);
-      if(m && goodName(m[1])) first=cleanName(m[1]);
-    }
-    let sex='';
-    const sm=all.match(/(?:SEXE|SEX)\s*[:.\-]?\s*([MFHX])\b/i);
-    if(sm) sex=/^[MH]$/i.test(sm[1])?'M':/^[F]$/i.test(sm[1])?'F':'X';
-    let nationality='';
-    const nm=all.match(/(?:NATIONALIT[ÉE]|NATIONALITY)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þa-zà-öø-ÿ'’ -]{2,30})/i);
-    if(nm){
-      nationality=cleanLine(nm[1]).replace(/\b(?:DATE|SEXE|SEX|BIRTH).*$/i,'').trim();
-      nationality=nationality.charAt(0).toUpperCase()+nationality.slice(1).toLowerCase();
-    }
-    if(!nationality && /R[ÉE]PUBLIQUE FRAN[ÇC]AISE|\bFRA\b/i.test(all)) nationality='Française';
-    const b=all.match(/(?:DATE\s+DE\s+NAISSANCE|DATE\s+OF\s+BIRTH|BIRTH\s*DATE|DOB)\s*[:.\-]?\s*([^\n]{5,24})/i);
-    const birthDate=parseDate(b?.[1]||'') || parseDate(all);
-    return {surname:cleanName(surname),first:cleanName(first),birthDate,nationality,sex,rawText:all};
-  }
-  function setValue(id,value){
-    if(!value)return;
-    const el=document.getElementById(id);
-    if(el)el.value=value;
-  }
-  function applyData(d){
-    if(goodName(d.surname)) setValue('cname',d.surname);
-    if(goodName(d.first)) setValue('cfirst',d.first);
-    setValue('cbirth',d.birthDate);
-    setValue('cnationality',d.nationality);
-    const sex=document.getElementById('csex');
-    if(sex && d.sex) sex.value=d.sex;
-    try{updateClientAge?.()}catch(e){}
-    try{refreshClientSourceColors?.()}catch(e){}
-  }
-  async function simpleAnalyzeIdentity(){
-    const run=++locIdentityRun;
-    const front=photoDraft.clientDocs?.idFront?.src||'';
-    const back=photoDraft.clientDocs?.idBack?.src||'';
-    if(!front && !back)return null;
-    if(!window.Tesseract){ setOCRStatus?.('⚠️ Lecture OCR indisponible.','bad'); return null; }
-    try{
-      setOCRStatus?.('🔎 Lecture de la pièce d’identité…');
-      let text='';
-      if(front){
-        const r=await Tesseract.recognize(front,'fra+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
-        if(run!==locIdentityRun)return null;
-        text+='\n'+String(r?.data?.text||'');
-      }
-      if(back){
-        const r=await Tesseract.recognize(back,'fra+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
-        if(run!==locIdentityRun)return null;
-        text+='\n'+String(r?.data?.text||'');
-      }
-      const d=parseIdentity(text);
-      applyData(d);
-      if(goodName(d.surname) && goodName(d.first)){
-        const safeEsc=(v)=>typeof esc==='function'?esc(v):v;
-        setOCRStatus?.(`✅ ${safeEsc(d.surname)} ${safeEsc(d.first)} · informations remplies automatiquement`,'good');
-        cameraBeep?.(true);
-      }else{
-        setOCRStatus?.('⚠️ Nom ou prénom insuffisamment lisible — refaire uniquement la photo si nécessaire.','bad');
-        cameraBeep?.(false);
-      }
-      return d;
-    }catch(e){
-      console.error('OCR identité simple',e);
-      setOCRStatus?.('⚠️ Lecture impossible — refaire la photo.','bad');
-      return null;
-    }
-  }
-  window.analyzeIdentityDocumentsAutomatically=simpleAnalyzeIdentity;
-  window.runIdentityOCR=async function(){ return simpleAnalyzeIdentity(); };
-  window.scheduleIdentityAutoAnalysis=function(){
-    clearTimeout(locIdentityTimer);
-    locIdentityTimer=setTimeout(simpleAnalyzeIdentity,300);
-  };
-  window.extractIdentityNames=function(raw){
-    const d=parseIdentity(raw); return {surname:d.surname,first:d.first};
-  };
-  window.identityAnalysisIsSufficient=function(d){
-    return goodName(d?.surname||'') && goodName(d?.first||'');
-  };
-  window.showDetectedCountryDecision=async function(){ return true; };
-})();
-</script>
-
-<script id="locautomoto-single-pass-name-guard">
-(function(){
-  function validPersonName(v=''){
-    const s=String(v||'')
-      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ'’ -]/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
-    const compact=s.replace(/[\s'’-]/g,'');
-    if(compact.length<2)return '';
-    if(/^(SURNAME|GIVENNAME|GIVENNAMES|FIRSTNAME|LASTNAME|FAMILYNAME|NOM|PRENOM|PRENOMS)$/i.test(compact))return '';
-    return s;
-  }
-
-  const baseFill=window.fillDetectedIdentityData;
-  if(typeof baseFill==='function'){
-    window.fillDetectedIdentityData=fillDetectedIdentityData=function(data){
-      const safe={...(data||{})};
-      safe.surname=validPersonName(safe.surname||safe.lastName||safe.familyName||safe.nom||'');
-      safe.first=validPersonName(safe.first||safe.firstName||safe.givenName||safe.prenom||'');
-      return baseFill(safe);
-    };
-  }
-
-  const baseEnough=window.identityAnalysisIsSufficient;
-  window.identityAnalysisIsSufficient=identityAnalysisIsSufficient=function(data){
-    const safe={...(data||{})};
-    safe.surname=validPersonName(safe.surname||'');
-    safe.first=validPersonName(safe.first||'');
-    if(!safe.surname || !safe.first)return false;
-    return typeof baseEnough==='function' ? baseEnough(safe) : true;
-  };
-})();
-</script>
-
-
 <style id="locautomoto-header-progress-inside-final">
 /* RÈGLE FINALE : le titre + la progression forment physiquement UN SEUL en-tête. */
 #modalBox > .modal-head,
@@ -40365,6 +40189,40 @@ html[data-theme="light"] #modalBox > .modal-header{
       return r;
     };
   }
+})();
+</script>
+
+
+<style id="locautomoto-identity-approved-ui">
+/* Identité — présentation validée */
+#clientWizardStep2 .doc-card{border:1px solid #2c3b46!important;border-radius:18px!important;overflow:hidden!important}
+#clientWizardStep2 .doc-card.done{border-color:#18d875!important;box-shadow:0 0 0 1px rgba(24,216,117,.16) inset!important}
+#clientWizardStep2 .doc-card.done::before{content:"✓ Pièce d’identité détectée";display:block;margin:12px 14px 4px;padding:12px 14px;border:1px solid #18d875;border-radius:12px;background:rgba(0,180,80,.12);color:#6af0a3;font-weight:900}
+#clientWizardStep2 [id^="prev_clientDocs_id"] img,#clientWizardStep2 .doc-card img{width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;border-radius:14px!important}
+#clientWizardStep2 .identity-detected-summary{border:1px solid #18d875;border-radius:16px;background:rgba(0,180,80,.10);padding:14px;margin-top:14px}
+#clientWizardStep2 .identity-detected-summary b{color:#6af0a3}
+</style>
+<script id="locautomoto-identity-approved-ui-js">
+(function(){
+ function renderApprovedIdentitySummary(){
+   const step=document.getElementById('clientWizardStep2'); if(!step)return;
+   let box=step.querySelector('.identity-detected-summary');
+   const front=photoDraft?.clientDocs?.idFront?.src||'';
+   if(!front){box?.remove();return}
+   if(!box){box=document.createElement('div');box.className='identity-detected-summary';step.appendChild(box)}
+   const val=id=>String(document.getElementById(id)?.value||'').trim();
+   const n=val('cname'),p=val('cfirst'),b=val('cbirth'),nat=val('cnationality');
+   box.innerHTML='<b>✓ Informations détectées</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">'+
+     '<div><small>Nom</small><div><strong>'+((typeof esc==='function'?esc(n):n)||'—')+'</strong></div></div>'+
+     '<div><small>Prénom</small><div><strong>'+((typeof esc==='function'?esc(p):p)||'—')+'</strong></div></div>'+
+     '<div><small>Date de naissance</small><div>'+((typeof esc==='function'?esc(b):b)||'—')+'</div></div>'+
+     '<div><small>Nationalité</small><div>'+((typeof esc==='function'?esc(nat):nat)||'—')+'</div></div></div>';
+ }
+ const base=window.fillDetectedIdentityData;
+ if(typeof base==='function')window.fillDetectedIdentityData=fillDetectedIdentityData=function(d){const r=base(d);setTimeout(renderApprovedIdentitySummary,0);return r};
+ const baseStep=window.clientWizardShowStep;
+ if(typeof baseStep==='function')window.clientWizardShowStep=clientWizardShowStep=function(s){const r=baseStep(s);if(Number(s)===2)setTimeout(renderApprovedIdentitySummary,0);return r};
+ window.renderApprovedIdentitySummary=renderApprovedIdentitySummary;
 })();
 </script>
 
