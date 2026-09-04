@@ -16835,7 +16835,15 @@ async function analyzeIdentityDocumentsAutomatically(){
    let combinedText='';
    const aiCandidates=[];
    for(const item of sources){
-for(let pass=1;pass<=3;pass++){
+     if(item.side==='recto' && docType==='id'){
+       try{
+         const zoned=await runFrenchCniZoneOCR(item.src);
+         if(zoned && (zoned.surname||zoned.first||zoned.birthDate||zoned.nationality||zoned.sex||zoned.documentNumber)){
+           aiCandidates.push(zoned);
+         }
+       }catch(_){}
+     }
+     for(let pass=1;pass<=3;pass++){
        try{
          const txt=await runIdentityOCRPass(item.src,item.side,pass);
          combinedText+='\\n'+txt;
