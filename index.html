@@ -14954,6 +14954,11 @@ function clientForm(c=null){
  <div id="clientWizardStep4" class="client-wizard-step">
    <h3>👤 4. Contrôle des informations</h3>
    <div class="notice">Vérifie et complète les informations détectées automatiquement.</div>
+   <div id="clientIdentityControlPhoto" class="card" style="display:none;margin:10px 0;padding:10px">
+     <div style="font-weight:800;margin-bottom:8px">🪪 Photo de la pièce d’identité</div>
+     <img id="clientIdentityControlPhotoImg" alt="Pièce d’identité du client" style="display:block;width:100%;max-height:230px;object-fit:contain;border-radius:10px;background:#080808">
+     <div class="hint" style="margin-top:6px">Compare la photo avec le nom, le prénom, la date de naissance, le sexe et la nationalité détectés.</div>
+   </div>
    <div class="row"><div class="field"><label>Nom</label><input id="cname" value="${esc(c?.name||'')}"></div><div class="field"><label>Prénom</label><input id="cfirst" value="${esc(c?.first||'')}"></div></div>
    <div class="row">
      <div class="field"><label>Date de naissance</label><input id="cbirth" type="date" value="${esc(c?.birthDate||'')}" onchange="updateClientAge()"><div id="clientAgeHint" class="hint"></div></div>
@@ -39852,6 +39857,17 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
 
       if(target===4){
         try{refreshClientSourceColors?.()}catch(e){}
+        try{
+          const src=photoDraft.clientDocs?.idFront?.src||'';
+          const holder=document.getElementById('clientIdentityControlPhoto');
+          const img=document.getElementById('clientIdentityControlPhotoImg');
+          if(holder && img && src){
+            img.src=src;
+            holder.style.display='block';
+          }else if(holder){
+            holder.style.display='none';
+          }
+        }catch(e){}
       }
       if(target===5){
         try{renderClientWizardSummary?.()}catch(e){}
