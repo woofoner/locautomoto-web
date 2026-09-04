@@ -16739,25 +16739,7 @@ function mergeIdentityOCRCandidates(candidates=[]){
 window.mergeIdentityOCRCandidates=mergeIdentityOCRCandidates;
 
 
-async function runMultimodalIdentityVision(src,side='document',docType='id'){
- if(!src)return null;
- const endpoint=window.LOC_VISION_ENDPOINT||'/api/vision';
- try{
-   const res=await fetch(endpoint,{
-     method:'POST',
-     headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({image:src,side,docType})
-   });
-   if(!res.ok)throw new Error('vision '+res.status);
-   const data=await res.json();
-   if(!data||typeof data!=='object')return null;
-   return data;
- }catch(e){
-   console.warn('Vision multimodale indisponible, OCR local utilisé',e);
-   return null;
- }
-}
-window.runMultimodalIdentityVision=runMultimodalIdentityVision;
+
 
 async function analyzeIdentityDocumentsAutomatically(){
  const frontData=photoDraft.clientDocs?.idFront||null;
@@ -16779,11 +16761,7 @@ async function analyzeIdentityDocumentsAutomatically(){
    let combinedText='';
    const aiCandidates=[];
    for(const item of sources){
-     try{
-       const vision=await runMultimodalIdentityVision(item.src,item.side,docType);
-       if(vision)aiCandidates.push(vision);
-     }catch(_){}
-     for(let pass=1;pass<=3;pass++){
+for(let pass=1;pass<=3;pass++){
        try{
          const txt=await runIdentityOCRPass(item.src,item.side,pass);
          combinedText+='\\n'+txt;
