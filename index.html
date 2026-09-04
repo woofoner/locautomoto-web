@@ -12403,6 +12403,23 @@ button.vehicle-step-dot{
   opacity:.82;
 }
 
+
+/* ===== CARTE CLIENT LOK AUTOMOTO v1 ===== */
+.lok-client-card{position:relative;overflow:hidden;background:linear-gradient(135deg,#f7fbff 0%,#eaf5ff 100%);color:#10243b;border:1px solid #b7d7ef;border-radius:22px;box-shadow:0 14px 35px #0003;max-width:920px;margin:16px auto}
+.lok-client-card-head{display:grid;grid-template-columns:1.05fr 1fr;min-height:112px}
+.lok-client-brand{padding:20px 24px;background:#f7fbff}.lok-client-brand b{font-size:31px;color:#0d2d52}.lok-client-brand b span{color:#156bb5}.lok-client-brand small{display:block;letter-spacing:4px;color:#145f9e;margin-top:4px}
+.lok-client-title{padding:20px 24px;background:linear-gradient(135deg,#17699f,#073a62);color:#fff;text-align:center;font-size:32px;font-weight:900;letter-spacing:4px}.lok-client-title small{display:block;font-size:11px;font-weight:500;letter-spacing:4px;margin-top:10px;opacity:.85}
+.lok-client-body{display:grid;grid-template-columns:210px 1fr;gap:28px;padding:26px 28px 20px}.lok-client-portrait{width:100%;height:250px;border:5px solid #9bd2f4;border-radius:20px;overflow:hidden;background:#dfeaf2;position:relative}.lok-client-portrait img{height:100%;width:300%;max-width:none;object-fit:cover;object-position:left center;display:block}.lok-client-portrait .empty{display:grid;place-items:center;height:100%;font-size:52px;color:#7691a5}
+.lok-client-fields{display:grid;gap:12px}.lok-client-field label{display:block;color:#0e64a6;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.5px}.lok-client-field .v{font-size:23px;font-weight:900;color:#0d1d31;min-height:30px}.lok-client-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;border-top:1px solid #b8d7ee;padding-top:13px}.lok-client-row.two{grid-template-columns:1fr 1fr}.lok-client-id{border-top:1px solid #8ec7ed;padding-top:14px;margin-top:4px}.lok-client-id .v{font-size:22px;letter-spacing:1px}.lok-client-qr{width:118px;height:118px;background:#fff;border:1px solid #b8d7ee;border-radius:12px;padding:6px;display:grid;place-items:center}.lok-client-qr canvas,.lok-client-qr img{max-width:100%!important;height:auto!important}
+.lok-client-card-foot{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;background:linear-gradient(90deg,#083a62,#0c537f);color:#fff;align-items:center;min-height:72px;padding:0 20px;gap:8px}.lok-client-card-foot div{text-align:center;font-size:13px;letter-spacing:2px}.lok-client-card-foot b{letter-spacing:1px}
+.lok-card-toolbar{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:10px 0 16px}
+@media(max-width:700px){.lok-client-card-head{grid-template-columns:1fr}.lok-client-title{font-size:24px}.lok-client-body{grid-template-columns:1fr;padding:18px}.lok-client-portrait{width:180px;height:220px;margin:auto}.lok-client-row,.lok-client-row.two{grid-template-columns:1fr}.lok-client-card-foot{grid-template-columns:1fr 1fr}.lok-client-card-foot div{padding:10px 4px}}
+@media print{
+ body.lok-print-card *{visibility:hidden!important}
+ body.lok-print-card .lok-client-card,body.lok-print-card .lok-client-card *{visibility:visible!important}
+ body.lok-print-card .lok-client-card{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:none!important;margin:0!important;box-shadow:none!important}
+}
+
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js">
 function extractAddressFromDocumentText(raw=''){
@@ -12462,6 +12479,7 @@ document.addEventListener('click',()=>setTimeout(locApplyStickyHeaders,30));
    continue normalement vers la confirmation du nom du véhicule. */
 
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07f6Ivo1ZivYdhB2kbuHXg/YShgXxHZyQ8wlM6xC9AHwmmpz6G7BG5P8qJz8ZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -12969,7 +12987,7 @@ function toggleLoginPassword(){
  }
 }
 window.toggleLoginPassword=toggleLoginPassword;
-function doLogin(){const l=document.getElementById('login').value.trim(),p=document.getElementById('pass').value;const u=S.users.find(x=>x.login===l&&x.pass===p&&x.active);if(!u){const e=document.getElementById('loginErr');e.textContent='Identifiants incorrects.';e.style.display='block';return}S.currentUser=u.id;save();home()}
+function doLogin(){const l=document.getElementById('login').value.trim(),p=document.getElementById('pass').value;const u=S.users.find(x=>x.login===l&&x.pass===p&&x.active);if(!u){const e=document.getElementById('loginErr');e.textContent='Identifiants incorrects.';e.style.display='block';return}S.currentUser=u.id;save();home();setTimeout(()=>openClientFromDeepLink?.(),120)}
 function logout(){S.currentUser=null;save();loginView()}
 function me(){
  if(!S.currentUser)return null;
@@ -14718,6 +14736,7 @@ function home(){
  const active=S.rentals.filter(r=>r.status==='En cours').length;
  const returns=S.rentals.filter(r=>r.status==='En cours'&&r.returnDate===today).length;
  const late=S.rentals.filter(r=>overdueDays(r)>0).length;
+ setTimeout(()=>openClientFromDeepLink?.(),150);
  shell('Tableau de bord',`
  
 
@@ -14964,7 +14983,7 @@ function clientForm(c=null){
      <div class="field"><label>Date de naissance</label><input id="cbirth" type="date" value="${esc(c?.birthDate||'')}" onchange="updateClientAge()"><div id="clientAgeHint" class="hint"></div></div>
      <div class="field"><label>Nationalité</label><input id="cnationality" value="${esc(c?.nationality||'')}" placeholder="Ex. Française, Mauricienne"></div>
    </div>
-   <div class="field"><label>Sexe</label><select id="csex"><option value="" ${!c?.sex?'selected':''}>Non renseigné</option><option value="homme" ${c?.sex==='homme'?'selected':''}>Homme</option><option value="femme" ${c?.sex==='femme'?'selected':''}>Femme</option><option value="autre" ${c?.sex==='autre'?'selected':''}>Autre</option></select></div>
+   <div class="row"><div class="field"><label>Sexe</label><select id="csex"><option value="" ${!c?.sex?'selected':''}>Non renseigné</option><option value="homme" ${c?.sex==='homme'?'selected':''}>Homme</option><option value="femme" ${c?.sex==='femme'?'selected':''}>Femme</option><option value="autre" ${c?.sex==='autre'?'selected':''}>Autre</option></select></div><div class="field"><label>Lieu de naissance</label><input id="cbirthplace" value="${esc(c?.birthPlace||'')}" placeholder="Ex. Saint-Denis"></div></div>
    <div class="row"><div class="field"><label>Téléphone</label><input id="cphone" value="${esc(c?.phone||'')}"></div><div class="field"><label>E-mail</label><input id="cemail" type="email" value="${esc(c?.email||'')}"></div></div>
    <div class="field">
      <label>Adresse</label>
@@ -15388,6 +15407,7 @@ function renderClientWizardSummary(){
      <div><b>Date de naissance :</b> ${esc(document.getElementById('cbirth')?.value||'-')} ${document.getElementById('clientAgeHint')?.textContent?`· ${esc(document.getElementById('clientAgeHint').textContent)}`:''}</div>
      <div><b>Sexe :</b> ${esc(document.getElementById('csex')?.value||'-')}</div>
      <div><b>Nationalité :</b> ${esc(document.getElementById('cnationality')?.value||'-')}</div>
+     <div><b>Lieu de naissance :</b> ${esc(document.getElementById('cbirthplace')?.value||'-')}</div>
      <div><b>Téléphone :</b> ${esc(document.getElementById('cphone')?.value||'-')}</div>
      <div><b>E-mail :</b> ${esc(document.getElementById('cemail')?.value||'-')}</div>
      <div><b>Adresse :</b> ${esc(document.getElementById('caddr')?.value||'-')}</div>
@@ -17121,7 +17141,7 @@ function sourceFieldState(id,state='auto',message=''){
 }
 
 function refreshClientSourceColors(){
- const ids=['cname','cfirst','cbirth','csex','cnationality','cphone','cemail','caddr','cresidenceaddr'];
+ const ids=['cname','cfirst','cbirth','cbirthplace','csex','cnationality','cphone','cemail','caddr','cresidenceaddr'];
  ids.forEach(id=>{
    const e=document.getElementById(id);
    if(!e)return;
@@ -17945,8 +17965,84 @@ function resolveAutomaticClientStatus(editingId=''){
 }
 window.resolveAutomaticClientStatus=resolveAutomaticClientStatus;
 
+
+function lokClientDisplayId(c){return 'LAM-'+String(new Date().getFullYear())+'-'+String(c?.id||'CLIENT').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(-8)}
+function lokClientDeepLink(c){
+ try{
+   const u=new URL(window.location.href);
+   u.search='';
+   u.hash='';
+   u.searchParams.set('client',c.id);
+   return u.toString();
+ }catch(e){return 'LOCAUTOMOTO_CLIENT:'+String(c?.id||'')}
+}
+function lokClientSex(v=''){return v==='homme'?'M':v==='femme'?'F':(v||'-')}
+function renderLokClientCard(c,holderId=''){
+ const photo=c?.docs?.idFront||'';
+ const cardId='lokCard_'+String(c?.id||'draft').replace(/[^A-Za-z0-9_-]/g,'');
+ const qrId='lokQr_'+String(c?.id||'draft').replace(/[^A-Za-z0-9_-]/g,'');
+ const html=`
+ <div class="lok-client-card" id="${cardId}">
+  <div class="lok-client-card-head">
+   <div class="lok-client-brand"><b>LOK<span>AutoMoto</span></b><small>LOCATION · VENTE · SERVICES</small></div>
+   <div class="lok-client-title">CARTE CLIENT<small>SIMPLE · FIABLE · PROCHE DE VOUS</small></div>
+  </div>
+  <div class="lok-client-body">
+   <div class="lok-client-portrait">${photo?'<img src="'+photo+'" alt="Photo client">':'<div class="empty">👤</div>'}</div>
+   <div class="lok-client-fields">
+    <div class="lok-client-field"><label>Nom</label><div class="v">${esc(c?.name||'-')}</div></div>
+    <div class="lok-client-field"><label>Prénom</label><div class="v">${esc(c?.first||'-')}</div></div>
+    <div class="lok-client-row">
+     <div class="lok-client-field"><label>Sexe</label><div class="v">${esc(lokClientSex(c?.sex||''))}</div></div>
+     <div class="lok-client-field"><label>Nationalité</label><div class="v">${esc(c?.nationality||'-')}</div></div>
+     <div class="lok-client-field"><label>Date de naissance</label><div class="v">${esc(c?.birthDate||'-')}</div></div>
+    </div>
+    <div class="lok-client-row two">
+     <div class="lok-client-field"><label>Lieu de naissance</label><div class="v">${esc(c?.birthPlace||'-')}</div></div>
+     <div class="lok-client-field" style="display:flex;justify-content:flex-end"><div id="${qrId}" class="lok-client-qr" title="QR client LOCautomoto"></div></div>
+    </div>
+    <div class="lok-client-field lok-client-id"><label>ID CLIENT LOK AUTOMOTO</label><div class="v">${esc(lokClientDisplayId(c))}</div></div>
+   </div>
+  </div>
+  <div class="lok-client-card-foot"><div>🚗 VOITURES</div><div>🏍️ MOTOS</div><div>🚐 UTILITAIRES</div><div><b>LOK AUTOMOTO</b><br><small>VOTRE MOBILITÉ, NOTRE PRIORITÉ</small></div></div>
+ </div>`;
+ if(holderId){const h=document.getElementById(holderId);if(h)h.innerHTML=html}
+ setTimeout(()=>{
+   const q=document.getElementById(qrId);
+   if(q && window.QRCode){
+     q.innerHTML='';
+     new QRCode(q,{text:lokClientDeepLink(c),width:104,height:104,correctLevel:QRCode.CorrectLevel.M});
+   }else if(q){q.innerHTML='<span style="font-size:10px;text-align:center">QR indisponible hors connexion</span>'}
+ },30);
+ return html;
+}
+window.renderLokClientCard=renderLokClientCard;
+function openLokClientCard(id){
+ const c=S.clients.find(x=>x.id===id); if(!c)return toast('Client introuvable');
+ openModal(`<div class="modal-head"><h2 style="margin:0">🪪 Carte client LOK AutoMoto</h2><div class="actions"><button class="close" onclick="closeModal()">✕</button></div></div><div id="lokClientCardHolder"></div><div class="lok-card-toolbar"><button class="btn" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER LES INFORMATIONS</button><button class="btn red" onclick="printLokClientCard()">🖨️ IMPRIMER LA CARTE</button></div>`);
+ setTimeout(()=>renderLokClientCard(c,'lokClientCardHolder'),20);
+}
+window.openLokClientCard=openLokClientCard;
+function printLokClientCard(){
+ document.body.classList.add('lok-print-card');
+ const done=()=>document.body.classList.remove('lok-print-card');
+ window.addEventListener('afterprint',done,{once:true});
+ window.print();
+ setTimeout(done,1500);
+}
+window.printLokClientCard=printLokClientCard;
+function openClientFromDeepLink(){
+ try{
+   const id=new URL(window.location.href).searchParams.get('client');
+   if(!id||!S.currentUser)return;
+   const c=S.clients.find(x=>x.id===id);
+   if(c)setTimeout(()=>openLokClientCard(id),80);
+ }catch(e){}
+}
+window.openClientFromDeepLink=openClientFromDeepLink;
+
 function saveClient(id){
- const old=S.clients.find(c=>c.id===id)||{};const c={id:id||uid('c'),name:document.getElementById('cname').value.trim(),first:document.getElementById('cfirst').value.trim(),birthDate:document.getElementById('cbirth')?.value||'',sex:document.getElementById('csex')?.value||'',nationality:document.getElementById('cnationality')?.value.trim()||'',identityDocType:document.getElementById('cidDocType')?.value||'id',phone:document.getElementById('cphone').value.trim(),email:document.getElementById('cemail').value.trim(),address:document.getElementById('caddr').value.trim(),residenceAddress:document.getElementById('cresidenceaddr')?.value.trim()||'',rating:automaticClientStatusFromData({name:document.getElementById('cname')?.value||'',first:document.getElementById('cfirst')?.value||'',birthDate:document.getElementById('cbirth')?.value||'',nationality:document.getElementById('cnationality')?.value||''},id),note:old.note||'',tourist:document.getElementById('ctourist')?.value==='oui',travelTicketData:(photoDraft.travelTicketData&&Object.keys(photoDraft.travelTicketData).length?{...photoDraft.travelTicketData}:{...(old.travelTicketData||{})}),docs:{...(old.docs||{})}};
+ const old=S.clients.find(c=>c.id===id)||{};const c={id:id||uid('c'),name:document.getElementById('cname').value.trim(),first:document.getElementById('cfirst').value.trim(),birthDate:document.getElementById('cbirth')?.value||'',birthPlace:document.getElementById('cbirthplace')?.value.trim()||'',sex:document.getElementById('csex')?.value||'',nationality:document.getElementById('cnationality')?.value.trim()||'',identityDocType:document.getElementById('cidDocType')?.value||'id',phone:document.getElementById('cphone').value.trim(),email:document.getElementById('cemail').value.trim(),address:document.getElementById('caddr').value.trim(),residenceAddress:document.getElementById('cresidenceaddr')?.value.trim()||'',rating:automaticClientStatusFromData({name:document.getElementById('cname')?.value||'',first:document.getElementById('cfirst')?.value||'',birthDate:document.getElementById('cbirth')?.value||'',nationality:document.getElementById('cnationality')?.value||''},id),note:old.note||'',tourist:document.getElementById('ctourist')?.value==='oui',travelTicketData:(photoDraft.travelTicketData&&Object.keys(photoDraft.travelTicketData).length?{...photoDraft.travelTicketData}:{...(old.travelTicketData||{})}),docs:{...(old.docs||{})}};
  for(const k of ['idFront','idBack','permitFront','permitBack','travelTicket','residenceProof','addressProof']){const d=photoDraft.clientDocs?.[k];if(d?.src)c.docs[k]=d.src;else if(!d&&c.docs[k]&&photoDraft.clientDocs&&!(k in photoDraft.clientDocs))delete c.docs[k]}
  if(!c.name||!c.first){toast('Nom et prénom requis');return}if(id)S.clients=S.clients.map(x=>x.id===id?c:x);else S.clients.push(c);rememberClientRisk(c);save();
  if(returnToRentalAfterClient){
@@ -17971,7 +18067,7 @@ function clientDetail(id){
  const c=S.clients.find(x=>x.id===id), rs=S.rentals.filter(r=>r.clientId===id).sort((a,b)=>b.created.localeCompare(a.created));
  openModal(`<div class="modal-head"><div class="client-identity">${clientDocThumbs(c)}<h2 style="margin:0">${statusIcon(c)} 👤 ${esc(c.first+' '+c.name)}</h2></div><div class="actions"><button class="close" onclick="closeModal()">✕</button></div></div>
  <div class="grid two"><div class="card"><div class="muted">⚧ Sexe</div><b>${esc(c.sex||'-')}</b><div class="muted" style="margin-top:10px">📞 Téléphone</div><b>${esc(c.phone||'-')}</b><div class="muted" style="margin-top:10px">✉️ E-mail</div><b>${esc(c.email||'-')}</b><div class="muted" style="margin-top:10px">🏠 Adresse</div><b>${esc(c.address||'-')}</b><div class="muted" style="margin-top:10px">📍 Adresse de résidence</div><b>${esc(c.residenceAddress||'-')}</b></div>
- <div class="card"><div class="muted">✈️ Touriste</div><b>${c.tourist?'Oui':'Non'}</b><div class="muted" style="margin-top:10px">Statut automatique</div><b>${esc(c.rating||'Nouveau client')}</b><button class="btn small" style="margin-top:12px" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER</button></div></div>
+ <div class="card"><div class="muted">✈️ Touriste</div><b>${c.tourist?'Oui':'Non'}</b><div class="muted" style="margin-top:10px">Statut automatique</div><b>${esc(c.rating||'Nouveau client')}</b><div class="muted" style="margin-top:10px">🎂 Lieu de naissance</div><b>${esc(c.birthPlace||'-')}</b><button class="btn small" style="margin-top:12px" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER</button><button class="btn small red" style="margin-top:8px" onclick="openLokClientCard('${id}')">🪪 CARTE CLIENT</button></div></div>
  <h3>🪪 Documents</h3><div class="photo-grid">${docCard(c.docs?.idFront,'ID recto','idFront')}${docCard(c.docs?.idBack,'ID verso','idBack')}${docCard(c.docs?.permitFront,'Permis recto','permitFront')}${docCard(c.docs?.permitBack,'Permis verso','permitBack')}${c.docs?.addressProof?docCard(c.docs.addressProof,"Justificatif d'adresse",'addressProof'):''}${c.docs?.residenceProof?docCard(c.docs.residenceProof,"Justificatif de résidence",'residenceProof'):''}${c.docs?.travelTicket?`<div class="photo"><img src="${c.docs.travelTicket}" onerror="this.style.opacity=.15"><div class="pbody"><b>Billet / titre de voyage</b><button class="btn small" style="margin-top:8px;width:100%" onclick="openClientTravelTicketDetails('${id}')">✈️ DÉTAILS DU VOYAGE</button></div></div>`:''}</div>
  <h3>📋 Historique de location (${rs.length})</h3><div class="list">${rs.length?rs.map(r=>`<div class="list-item"><div><b>${esc(r.id)}</b><div>${esc(carName(r.carId))} · ${esc(r.startDate)} → ${esc(r.returnDate)}</div><div class="muted">${money(r.total)} · ${esc(r.status)}</div></div><button class="btn small" onclick="rentalDetail('${r.id}')">👁️</button></div>`).join(''):'<div class="notice">Aucune location.</div>'}</div>`);
 }
