@@ -15996,6 +15996,21 @@ function cleanOCRName(s){
 function titleCaseName(s){
  return cleanOCRName(s).toLowerCase().replace(/(^|[\s'-])([a-zà-öø-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
 }
+function plausibleOCRName(value=''){
+ const s=cleanOCRName(value);
+ const letters=(s.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]).length;
+ if(letters<2)return false;
+ if(/^(NOM|SURNAME|NAME|PRENOM|PRÉNOM|GIVEN|SEX|SEXE|FRA|FRANCE)$/i.test(s))return false;
+ return true;
+}
+function plausibleOCRIdentityNames(surname='',first=''){
+ const s=cleanOCRName(surname),f=cleanOCRName(first);
+ if(!plausibleOCRName(s)||!plausibleOCRName(f))return false;
+ const total=((s+f).match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]).length;
+ return total>=5;
+}
+window.plausibleOCRName=plausibleOCRName;
+window.plausibleOCRIdentityNames=plausibleOCRIdentityNames;
 function extractIdentityNames(raw){
  const text=String(raw||'').replace(/\r/g,'');
  const lines=text.split('\n').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
@@ -16318,10 +16333,14 @@ function extractInternationalIdentityData(raw=''){
    if(!nationality && /\bMUS\b/i.test(text))nationality='Mauricienne';
  }
 
+ const rawSurname=french.surname||names.surname||'';
+ const rawFirst=french.first||names.first||'';
+ const namesReliable=plausibleOCRIdentityNames(rawSurname,rawFirst);
+
  return {
    ...detected,
-   surname:french.surname||names.surname||'',
-   first:french.first||names.first||'',
+   surname:namesReliable?rawSurname:'',
+   first:namesReliable?rawFirst:'',
    documentNumber:(french.documentNumber||documentNumber).replace(/[<>]/g,'').trim(),
    nationality:(french.nationality||nationality).trim(),
    birthDate:normalizeIdentityDateForInput(french.birthDate||birthDate),
@@ -16427,9 +16446,9 @@ function identityAnalysisIsSufficient(data){
    (String(data?.country||'').trim() && String(data?.country||'').trim()!=='Inconnu')
  );
  const isFrance=String(data?.country||'')==='France';
- if(surname && first && identityMarker)return true;
- if(isFrance && surname && first)return true;
- if(isFrance && (surname||first) && String(data?.birthDate||'').trim() && identityMarker)return true;
+ const namesReliable=plausibleOCRIdentityNames(surname,first);
+ if(namesReliable && identityMarker)return true;
+ if(isFrance && namesReliable)return true;
  return false;
 }
 
@@ -17702,6 +17721,16 @@ function cropDetectedDocument(source,edges){
  let b=Math.min(source.height,Math.round(edges.bottom.pos));
  let w=r-x,h=b-y;
  if(w<source.width*.45||h<source.height*.35)return source;
+
+ // Marge de sécurité : la détection d'un bord ne doit jamais couper le document.
+ // On garde un peu d'image autour des 4 bords, puis on normalise le ratio.
+ const safeX=Math.max(10,Math.round(w*.045));
+ const safeY=Math.max(10,Math.round(h*.055));
+ x=Math.max(0,x-safeX);
+ y=Math.max(0,y-safeY);
+ r=Math.min(source.width,r+safeX);
+ b=Math.min(source.height,b+safeY);
+ w=r-x;h=b-y;
 
  const mode=documentFrameMode(documentCameraKey);
  const targetRatio=mode==='card'?1.586:mode==='passport'?1.42:null;
