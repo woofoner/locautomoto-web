@@ -12403,23 +12403,6 @@ button.vehicle-step-dot{
   opacity:.82;
 }
 
-
-/* ===== CARTE CLIENT LOK AUTOMOTO v1 ===== */
-.lok-client-card{position:relative;overflow:hidden;background:linear-gradient(135deg,#f7fbff 0%,#eaf5ff 100%);color:#10243b;border:1px solid #b7d7ef;border-radius:22px;box-shadow:0 14px 35px #0003;max-width:920px;margin:16px auto}
-.lok-client-card-head{display:grid;grid-template-columns:1.05fr 1fr;min-height:112px}
-.lok-client-brand{padding:20px 24px;background:#f7fbff}.lok-client-brand b{font-size:31px;color:#0d2d52}.lok-client-brand b span{color:#156bb5}.lok-client-brand small{display:block;letter-spacing:4px;color:#145f9e;margin-top:4px}
-.lok-client-title{padding:20px 24px;background:linear-gradient(135deg,#17699f,#073a62);color:#fff;text-align:center;font-size:32px;font-weight:900;letter-spacing:4px}.lok-client-title small{display:block;font-size:11px;font-weight:500;letter-spacing:4px;margin-top:10px;opacity:.85}
-.lok-client-body{display:grid;grid-template-columns:210px 1fr;gap:28px;padding:26px 28px 20px}.lok-client-portrait{width:100%;height:250px;border:5px solid #9bd2f4;border-radius:20px;overflow:hidden;background:#dfeaf2;position:relative}.lok-client-portrait img{height:100%;width:300%;max-width:none;object-fit:cover;object-position:left center;display:block}.lok-client-portrait .empty{display:grid;place-items:center;height:100%;font-size:52px;color:#7691a5}
-.lok-client-fields{display:grid;gap:12px}.lok-client-field label{display:block;color:#0e64a6;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.5px}.lok-client-field .v{font-size:23px;font-weight:900;color:#0d1d31;min-height:30px}.lok-client-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;border-top:1px solid #b8d7ee;padding-top:13px}.lok-client-row.two{grid-template-columns:1fr 1fr}.lok-client-id{border-top:1px solid #8ec7ed;padding-top:14px;margin-top:4px}.lok-client-id .v{font-size:22px;letter-spacing:1px}.lok-client-qr{width:118px;height:118px;background:#fff;border:1px solid #b8d7ee;border-radius:12px;padding:6px;display:grid;place-items:center}.lok-client-qr canvas,.lok-client-qr img{max-width:100%!important;height:auto!important}
-.lok-client-card-foot{display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr;background:linear-gradient(90deg,#083a62,#0c537f);color:#fff;align-items:center;min-height:72px;padding:0 20px;gap:8px}.lok-client-card-foot div{text-align:center;font-size:13px;letter-spacing:2px}.lok-client-card-foot b{letter-spacing:1px}
-.lok-card-toolbar{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin:10px 0 16px}
-@media(max-width:700px){.lok-client-card-head{grid-template-columns:1fr}.lok-client-title{font-size:24px}.lok-client-body{grid-template-columns:1fr;padding:18px}.lok-client-portrait{width:180px;height:220px;margin:auto}.lok-client-row,.lok-client-row.two{grid-template-columns:1fr}.lok-client-card-foot{grid-template-columns:1fr 1fr}.lok-client-card-foot div{padding:10px 4px}}
-@media print{
- body.lok-print-card *{visibility:hidden!important}
- body.lok-print-card .lok-client-card,body.lok-print-card .lok-client-card *{visibility:visible!important}
- body.lok-print-card .lok-client-card{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:none!important;margin:0!important;box-shadow:none!important}
-}
-
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js">
 function extractAddressFromDocumentText(raw=''){
@@ -12479,7 +12462,144 @@ document.addEventListener('click',()=>setTimeout(locApplyStickyHeaders,30));
    continue normalement vers la confirmation du nom du véhicule. */
 
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07f6Ivo1ZivYdhB2kbuHXg/YShgXxHZyQ8wlM6xC9AHwmmpz6G7BG5P8qJz8ZQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<style id="locautomoto-client-header-glass">
+/* Nouveau client : en-tête sticky translucide, contenu visible dessous */
+#modalBox .modal-head{
+  background:rgba(23,27,31,.72) !important;
+  backdrop-filter:blur(14px) saturate(1.08) !important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.08) !important;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 24px rgba(0,0,0,.14);
+}
+html[data-theme="light"] #modalBox .modal-head{
+  background:rgba(255,255,255,.72) !important;
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+</style>
+
+
+<style id="locautomoto-unified-wizard-headers">
+/* ===== Entêtes unifiés pour tous les assistants étape par étape ===== */
+:root{--loc-wizard-head-h:92px}
+
+/* Le conteneur d'en-tête reste toujours au-dessus */
+#modalBox .modal-head,
+.wizard-head,.wizard-header,
+.vehicle-wizard-head,.vehicle-step-head,
+.step-head,.step-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:1600!important;
+  background:rgba(23,27,31,.78)!important;
+  backdrop-filter:blur(14px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.08)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 8px 22px rgba(0,0,0,.14)!important;
+}
+
+/* Les barres d'étapes deviennent une seconde ligne intégrée sous le titre */
+.client-wizard-progress,
+.vehicle-wizard-progress,
+.vehicle-model-setup-progress,
+.wizard-progress,.wizard-steps,
+.vehicle-step-tabs,.vehicle-wizard-steps,
+.step-tabs,.steps-nav{
+  position:sticky!important;
+  top:56px!important;
+  z-index:1590!important;
+  margin-top:0!important;
+  background:rgba(23,27,31,.78)!important;
+  backdrop-filter:blur(14px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.08)!important;
+  border-bottom:1px solid rgba(255,255,255,.06)!important;
+}
+
+/* Empêche le contenu de passer visuellement au-dessus de l'en-tête */
+#modalBox,
+.modal,.sheet,.dialog,.wizard,.vehicle-wizard{
+  overflow-x:hidden!important;
+}
+
+/* Les numéros ne doivent jamais être coupés en haut */
+.client-wizard-progress,
+.vehicle-wizard-progress,
+.vehicle-model-setup-progress{
+  padding-top:8px!important;
+  padding-bottom:8px!important;
+  min-height:44px!important;
+}
+
+/* En mode clair */
+html[data-theme="light"] #modalBox .modal-head,
+html[data-theme="light"] .wizard-head,
+html[data-theme="light"] .wizard-header,
+html[data-theme="light"] .vehicle-wizard-head,
+html[data-theme="light"] .vehicle-step-head,
+html[data-theme="light"] .step-head,
+html[data-theme="light"] .step-header,
+html[data-theme="light"] .client-wizard-progress,
+html[data-theme="light"] .vehicle-wizard-progress,
+html[data-theme="light"] .vehicle-model-setup-progress,
+html[data-theme="light"] .wizard-progress,
+html[data-theme="light"] .wizard-steps,
+html[data-theme="light"] .vehicle-step-tabs,
+html[data-theme="light"] .vehicle-wizard-steps,
+html[data-theme="light"] .step-tabs,
+html[data-theme="light"] .steps-nav{
+  background:rgba(255,255,255,.80)!important;
+  border-color:rgba(0,0,0,.08)!important;
+}
+</style>
+
+
+<style id="locautomoto-global-header-lock">
+/* GLOBAL : aucun indicateur d'étape ne peut passer au-dessus d'un en-tête */
+.modal-box,.wizard,.vehicle-wizard,.sheet,.dialog{position:relative!important}
+
+/* En-tête = couche supérieure permanente */
+.modal-box>.modal-head,
+.modal-box>.modal-header,
+.wizard>.wizard-head,.wizard>.wizard-header,
+.vehicle-wizard>.vehicle-wizard-head,
+.vehicle-wizard>.vehicle-step-head,
+.sheet>.sheet-head,.dialog>.dialog-head{
+  position:sticky!important;
+  top:0!important;
+  z-index:2147483000!important;
+  isolation:isolate!important;
+  background:rgba(23,27,31,.98)!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
+
+/* Les étapes restent SOUS l'en-tête et ne peuvent jamais le traverser */
+.client-wizard-progress,.vehicle-wizard-progress,.vehicle-model-setup-progress,
+.wizard-progress,.wizard-steps,.vehicle-step-tabs,.vehicle-wizard-steps,
+.step-tabs,.steps-nav,.loc-sticky-step-nav{
+  position:sticky!important;
+  top:58px!important;
+  z-index:100!important;
+  clip-path:inset(0 0 0 0)!important;
+}
+
+/* Le contenu reste toujours derrière les deux couches d'en-tête */
+.client-wizard-step,.vehicle-wizard-step,.wizard-step,.step-panel,
+.modal-body,.wizard-body,.vehicle-wizard-body{
+  position:relative!important;
+  z-index:1!important;
+}
+
+html[data-theme="light"] .modal-box>.modal-head,
+html[data-theme="light"] .modal-box>.modal-header,
+html[data-theme="light"] .wizard>.wizard-head,
+html[data-theme="light"] .wizard>.wizard-header,
+html[data-theme="light"] .vehicle-wizard>.vehicle-wizard-head,
+html[data-theme="light"] .vehicle-wizard>.vehicle-step-head{
+  background:rgba(255,255,255,.98)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="root"></div>
@@ -12987,7 +13107,7 @@ function toggleLoginPassword(){
  }
 }
 window.toggleLoginPassword=toggleLoginPassword;
-function doLogin(){const l=document.getElementById('login').value.trim(),p=document.getElementById('pass').value;const u=S.users.find(x=>x.login===l&&x.pass===p&&x.active);if(!u){const e=document.getElementById('loginErr');e.textContent='Identifiants incorrects.';e.style.display='block';return}S.currentUser=u.id;save();home();setTimeout(()=>openClientFromDeepLink?.(),120)}
+function doLogin(){const l=document.getElementById('login').value.trim(),p=document.getElementById('pass').value;const u=S.users.find(x=>x.login===l&&x.pass===p&&x.active);if(!u){const e=document.getElementById('loginErr');e.textContent='Identifiants incorrects.';e.style.display='block';return}S.currentUser=u.id;save();home()}
 function logout(){S.currentUser=null;save();loginView()}
 function me(){
  if(!S.currentUser)return null;
@@ -14736,7 +14856,6 @@ function home(){
  const active=S.rentals.filter(r=>r.status==='En cours').length;
  const returns=S.rentals.filter(r=>r.status==='En cours'&&r.returnDate===today).length;
  const late=S.rentals.filter(r=>overdueDays(r)>0).length;
- setTimeout(()=>openClientFromDeepLink?.(),150);
  shell('Tableau de bord',`
  
 
@@ -14956,6 +15075,7 @@ function clientForm(c=null){
    <div id="ocrIdentityStatus" class="notice" style="margin-top:10px">🌍 LOCautomoto analysera automatiquement le document et préremplira les informations reconnues.</div>
    <div id="clientWizardDocuments">${documentCaptureHtml(c?.docs||{})}</div>
    <div class="client-wizard-actions">
+     <button class="btn outline" onclick="clientWizardPrev()">← PRÉCÉDENT</button>
      <button class="btn red" onclick="clientWizardNext()">SUIVANT</button>
    </div>
  </div>
@@ -14973,17 +15093,12 @@ function clientForm(c=null){
  <div id="clientWizardStep4" class="client-wizard-step">
    <h3>👤 4. Contrôle des informations</h3>
    <div class="notice">Vérifie et complète les informations détectées automatiquement.</div>
-   <div id="clientIdentityControlPhoto" class="card" style="display:none;margin:10px 0;padding:10px">
-     <div style="font-weight:800;margin-bottom:8px">🪪 Photo de la pièce d’identité</div>
-     <img id="clientIdentityControlPhotoImg" alt="Pièce d’identité du client" style="display:block;width:100%;max-height:230px;object-fit:contain;border-radius:10px;background:#080808">
-     <div class="hint" style="margin-top:6px">Compare la photo avec le nom, le prénom, la date de naissance, le sexe et la nationalité détectés.</div>
-   </div>
    <div class="row"><div class="field"><label>Nom</label><input id="cname" value="${esc(c?.name||'')}"></div><div class="field"><label>Prénom</label><input id="cfirst" value="${esc(c?.first||'')}"></div></div>
    <div class="row">
      <div class="field"><label>Date de naissance</label><input id="cbirth" type="date" value="${esc(c?.birthDate||'')}" onchange="updateClientAge()"><div id="clientAgeHint" class="hint"></div></div>
      <div class="field"><label>Nationalité</label><input id="cnationality" value="${esc(c?.nationality||'')}" placeholder="Ex. Française, Mauricienne"></div>
    </div>
-   <div class="row"><div class="field"><label>Sexe</label><select id="csex"><option value="" ${!c?.sex?'selected':''}>Non renseigné</option><option value="homme" ${c?.sex==='homme'?'selected':''}>Homme</option><option value="femme" ${c?.sex==='femme'?'selected':''}>Femme</option><option value="autre" ${c?.sex==='autre'?'selected':''}>Autre</option></select></div><div class="field"><label>Lieu de naissance</label><input id="cbirthplace" value="${esc(c?.birthPlace||'')}" placeholder="Ex. Saint-Denis"></div></div>
+   <div class="field"><label>Sexe</label><select id="csex"><option value="" ${!c?.sex?'selected':''}>Non renseigné</option><option value="homme" ${c?.sex==='homme'?'selected':''}>Homme</option><option value="femme" ${c?.sex==='femme'?'selected':''}>Femme</option><option value="autre" ${c?.sex==='autre'?'selected':''}>Autre</option></select></div>
    <div class="row"><div class="field"><label>Téléphone</label><input id="cphone" value="${esc(c?.phone||'')}"></div><div class="field"><label>E-mail</label><input id="cemail" type="email" value="${esc(c?.email||'')}"></div></div>
    <div class="field">
      <label>Adresse</label>
@@ -15040,7 +15155,6 @@ function clientForm(c=null){
      <div id="travelIdentityReference"></div>
    </div>
    <div class="client-wizard-actions">
-     <button class="btn outline" onclick="clientWizardPrev()">← PRÉCÉDENT</button>
      <button class="btn red" onclick="clientWizardNext()">SUIVANT</button>
    </div>
  </div>
@@ -15163,6 +15277,11 @@ function continueReviewedDocument(key=''){
 
  const next=documentNextKey(key);
  if(next){
+   const docType=document.getElementById('cidDocType')?.value||'id';
+   if(key==='idFront' && docType==='passport'){
+     setTimeout(()=>clientWizardShowStep(3),120);
+     return true;
+   }
    setTimeout(()=>scannerDocumentIdentite(next),120);
    return true;
  }
@@ -15271,11 +15390,11 @@ function passReviewedDocumentToStart(key=''){
    if(meta)meta.textContent='Document à reprendre';
  }
 
- // PASSER = rester/revenir à l'étape correspondant au document concerné.
- const targetStep = /^permit/i.test(key) ? 3
-   : /^(idFront|idBack)$/i.test(key) ? 2
-   : /^(residenceProof|addressProof)$/i.test(key) ? 4
-   : 1;
+ // PASSER = rester sur l'étape correspondant au document refusé.
+ const targetStep = key==='travelTicket' ? 1
+   : (key==='idFront'||key==='idBack') ? 2
+   : (key==='permitFront'||key==='permitBack') ? 3
+   : 4;
  if(typeof clientWizardShowStep==='function'){
    clientWizardShowStep(targetStep);
  }else{
@@ -15337,6 +15456,7 @@ window.cancelSkipClientPhoto=cancelSkipClientPhoto;
 window.confirmSkipClientPhoto=confirmSkipClientPhoto;
 
 function clientWizardNext(){
+ // Étape 1 : touriste / billet. Le billet reste facultatif.
  if(clientWizardStep===2){
    const type=document.getElementById('cidDocType')?.value||'id';
    const missing=[];
@@ -15363,8 +15483,6 @@ function clientWizardNext(){
    const email=document.getElementById('cemail')?.value.trim()||'';
    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Adresse e-mail invalide');return}
  }
- // Étape touriste : le billet / titre de voyage reste facultatif.
- // S'il n'y a pas de photo, on passe directement à l'étape suivante sans confirmation.
  if(clientWizardStep<5){
    clientWizardShowStep(clientWizardStep+1);
  }
@@ -15407,7 +15525,6 @@ function renderClientWizardSummary(){
      <div><b>Date de naissance :</b> ${esc(document.getElementById('cbirth')?.value||'-')} ${document.getElementById('clientAgeHint')?.textContent?`· ${esc(document.getElementById('clientAgeHint').textContent)}`:''}</div>
      <div><b>Sexe :</b> ${esc(document.getElementById('csex')?.value||'-')}</div>
      <div><b>Nationalité :</b> ${esc(document.getElementById('cnationality')?.value||'-')}</div>
-     <div><b>Lieu de naissance :</b> ${esc(document.getElementById('cbirthplace')?.value||'-')}</div>
      <div><b>Téléphone :</b> ${esc(document.getElementById('cphone')?.value||'-')}</div>
      <div><b>E-mail :</b> ${esc(document.getElementById('cemail')?.value||'-')}</div>
      <div><b>Adresse :</b> ${esc(document.getElementById('caddr')?.value||'-')}</div>
@@ -16021,21 +16138,6 @@ function cleanOCRName(s){
 function titleCaseName(s){
  return cleanOCRName(s).toLowerCase().replace(/(^|[\s'-])([a-zà-öø-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
 }
-function plausibleOCRName(value=''){
- const s=cleanOCRName(value);
- const letters=(s.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]).length;
- if(letters<2)return false;
- if(/^(NOM|SURNAME|NAME|PRENOM|PRÉNOM|GIVEN|SEX|SEXE|FRA|FRANCE)$/i.test(s))return false;
- return true;
-}
-function plausibleOCRIdentityNames(surname='',first=''){
- const s=cleanOCRName(surname),f=cleanOCRName(first);
- if(!plausibleOCRName(s)||!plausibleOCRName(f))return false;
- const total=((s+f).match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g)||[]).length;
- return total>=5;
-}
-window.plausibleOCRName=plausibleOCRName;
-window.plausibleOCRIdentityNames=plausibleOCRIdentityNames;
 function extractIdentityNames(raw){
  const text=String(raw||'').replace(/\r/g,'');
  const lines=text.split('\n').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
@@ -16358,14 +16460,10 @@ function extractInternationalIdentityData(raw=''){
    if(!nationality && /\bMUS\b/i.test(text))nationality='Mauricienne';
  }
 
- const rawSurname=french.surname||names.surname||'';
- const rawFirst=french.first||names.first||'';
- const namesReliable=plausibleOCRIdentityNames(rawSurname,rawFirst);
-
  return {
    ...detected,
-   surname:namesReliable?rawSurname:'',
-   first:namesReliable?rawFirst:'',
+   surname:french.surname||names.surname||'',
+   first:french.first||names.first||'',
    documentNumber:(french.documentNumber||documentNumber).replace(/[<>]/g,'').trim(),
    nationality:(french.nationality||nationality).trim(),
    birthDate:normalizeIdentityDateForInput(french.birthDate||birthDate),
@@ -16464,17 +16562,24 @@ window.detectIdentityCountryAndType=detectIdentityCountryAndType;
 function identityAnalysisIsSufficient(data){
  const surname=String(data?.surname||'').trim();
  const first=String(data?.first||'').trim();
- const identityMarker=Boolean(
-   String(data?.documentNumber||'').trim() ||
-   String(data?.birthDate||'').trim() ||
-   String(data?.nationality||'').trim() ||
-   (String(data?.country||'').trim() && String(data?.country||'').trim()!=='Inconnu')
- );
- const isFrance=String(data?.country||'')==='France';
- const namesReliable=plausibleOCRIdentityNames(surname,first);
- if(namesReliable && identityMarker)return true;
- if(isFrance && namesReliable)return true;
- return false;
+ const birth=String(data?.birthDate||'').trim();
+ const nationality=String(data?.nationality||'').trim();
+ const docNo=String(data?.documentNumber||'').trim();
+ const sex=String(data?.sex||'').trim();
+ const country=String(data?.country||'').trim();
+ const mrzNo=String(data?.mrz?.documentNumber||'').trim();
+ let score=0;
+ if(surname)score+=2;
+ if(first)score+=2;
+ if(birth)score+=2;
+ if(nationality)score+=1;
+ if(docNo||mrzNo)score+=2;
+ if(sex)score+=1;
+ if(country && country!=='Inconnu')score+=1;
+ // Le document est accepté dès que plusieurs éléments indépendants concordent.
+ // Nom + prénom reste le signal prioritaire, mais un OCR partiel ne déclenche
+ // plus à tort « document non identifié ».
+ return Boolean((surname&&first) || score>=4);
 }
 
 function continueClientIdentityAutomatically(){
@@ -16511,7 +16616,7 @@ async function analyzeIdentityDocumentsAutomatically(){
  if(!window.Tesseract){
    setOCRStatus("ℹ️ Photos enregistrées. L'analyse automatique internationale nécessite une connexion internet pour charger le module OCR.",'bad');
    const reviewKey=back?'idBack':'idFront';
-   setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture automatique indisponible ou insuffisante'),180);
+   setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
    return;
  }
 
@@ -16538,15 +16643,7 @@ async function analyzeIdentityDocumentsAutomatically(){
 
    let data=extractInternationalIdentityData(combinedText);
 
-   if(!identityAnalysisIsSufficient(data)){
-     let secondPassText='';
-     for(const item of sources){
-       secondPassText += '\n' + await runIdentityOCRPass(item.src,item.side,2);
-     }
-     combinedText += '\n' + secondPassText;
-     data=extractInternationalIdentityData(combinedText);
-   }
-
+   // Une seule lecture OCR par photo : aucune seconde passe automatique.
    fillDetectedIdentityData(data);
 
    const summary=[
@@ -16573,7 +16670,7 @@ async function analyzeIdentityDocumentsAutomatically(){
        'bad'
      );
      const reviewKey=back?'idBack':'idFront';
-     setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture automatique indisponible ou insuffisante'),180);
+     setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
    }
  }catch(e){
    console.error('Analyse automatique internationale',e);
@@ -16582,7 +16679,7 @@ async function analyzeIdentityDocumentsAutomatically(){
      'bad'
    );
    const reviewKey=(photoDraft.clientDocs?.idBack?.src)?'idBack':'idFront';
-   setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture automatique indisponible ou insuffisante'),180);
+   setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — reprends seulement si les champs affichés sont incorrects'),180);
  }
 }
 window.analyzeIdentityDocumentsAutomatically=analyzeIdentityDocumentsAutomatically;
@@ -16729,7 +16826,7 @@ async function processDocumentLikeScanner(file){
          let cropped=source;
          const edgeCount=edges?.count||0;
 
-         if(edges && edgeCount>=3){
+         if(edges && edgeCount===4){
            try{
              cropped=cropDetectedDocument(source,edges);
            }catch(e){
@@ -16768,7 +16865,7 @@ async function processDocumentLikeScanner(file){
            src,
            raw:raw||src,
            edgeCount,
-           cropped:edgeCount>=3,
+           cropped:edgeCount===4,
            enhanced:true,
            browserConverted:!!browserPhoto?.converted,
            mime:'image/jpeg'
@@ -17141,7 +17238,7 @@ function sourceFieldState(id,state='auto',message=''){
 }
 
 function refreshClientSourceColors(){
- const ids=['cname','cfirst','cbirth','cbirthplace','csex','cnationality','cphone','cemail','caddr','cresidenceaddr'];
+ const ids=['cname','cfirst','cbirth','csex','cnationality','cphone','cemail','caddr','cresidenceaddr'];
  ids.forEach(id=>{
    const e=document.getElementById(id);
    if(!e)return;
@@ -17737,52 +17834,22 @@ function detectDocumentEdges(canvas){
  };
 }
 function cropDetectedDocument(source,edges){
- /* Règle document globale : les quatre bords détectés deviennent les limites
-    réelles de l'image. Aucun cadre noir n'est ajouté. Le résultat est ensuite
-    normalisé au ratio carte d'identité/permis pour un aperçu plein cadre. */
- let x=Math.max(0,Math.round(edges.left.pos));
- let y=Math.max(0,Math.round(edges.top.pos));
- let r=Math.min(source.width,Math.round(edges.right.pos));
- let b=Math.min(source.height,Math.round(edges.bottom.pos));
- let w=r-x,h=b-y;
+ /* Recadrage strict : les 4 bords réellement détectés deviennent exactement
+    les limites de l'image finale. On n'agrandit plus au ratio théorique, car
+    cela réintroduisait l'environnement autour du document. */
+ if(!edges || edges.count!==4 || !edges.left || !edges.top || !edges.right || !edges.bottom)return source;
+ const x=Math.max(0,Math.round(edges.left.pos));
+ const y=Math.max(0,Math.round(edges.top.pos));
+ const r=Math.min(source.width,Math.round(edges.right.pos));
+ const b=Math.min(source.height,Math.round(edges.bottom.pos));
+ const w=r-x,h=b-y;
  if(w<source.width*.45||h<source.height*.35)return source;
-
- // Marge de sécurité : la détection d'un bord ne doit jamais couper le document.
- // On garde un peu d'image autour des 4 bords, puis on normalise le ratio.
- const safeX=Math.max(10,Math.round(w*.045));
- const safeY=Math.max(10,Math.round(h*.055));
- x=Math.max(0,x-safeX);
- y=Math.max(0,y-safeY);
- r=Math.min(source.width,r+safeX);
- b=Math.min(source.height,b+safeY);
- w=r-x;h=b-y;
-
- const mode=documentFrameMode(documentCameraKey);
- const targetRatio=mode==='card'?1.586:mode==='passport'?1.42:null;
- const currentRatio=w/h;
- /* Les cartes et passeports ont un ratio de référence.
-    Les grands documents/billets conservent leur propre rectangle détecté. */
- if(targetRatio && Math.abs(currentRatio-targetRatio)>.015){
-   if(currentRatio>targetRatio){
-     const wantedH=w/targetRatio;
-     const extra=wantedH-h;
-     y=Math.max(0,y-extra/2);
-     b=Math.min(source.height,b+extra/2);
-   }else{
-     const wantedW=h*targetRatio;
-     const extra=wantedW-w;
-     x=Math.max(0,x-extra/2);
-     r=Math.min(source.width,r+extra/2);
-   }
-   w=r-x;h=b-y;
- }
-
  const out=document.createElement('canvas');
- const maxW=1400,scale=Math.min(1,maxW/w);
+ const maxW=1600,scale=Math.min(1,maxW/w);
  out.width=Math.max(1,Math.round(w*scale));
  out.height=Math.max(1,Math.round(h*scale));
  out.getContext('2d').drawImage(source,x,y,w,h,0,0,out.width,out.height);
- return out
+ return out;
 }
 function markEdges(edges){document.querySelectorAll('#cameraGuide .edge-dot').forEach(d=>d.classList.toggle('ok',!!edges?.ok?.[d.dataset.edge]))}
 async function takeGuidedPhoto(){
@@ -17965,84 +18032,8 @@ function resolveAutomaticClientStatus(editingId=''){
 }
 window.resolveAutomaticClientStatus=resolveAutomaticClientStatus;
 
-
-function lokClientDisplayId(c){return 'LAM-'+String(new Date().getFullYear())+'-'+String(c?.id||'CLIENT').replace(/[^A-Za-z0-9]/g,'').toUpperCase().slice(-8)}
-function lokClientDeepLink(c){
- try{
-   const u=new URL(window.location.href);
-   u.search='';
-   u.hash='';
-   u.searchParams.set('client',c.id);
-   return u.toString();
- }catch(e){return 'LOCAUTOMOTO_CLIENT:'+String(c?.id||'')}
-}
-function lokClientSex(v=''){return v==='homme'?'M':v==='femme'?'F':(v||'-')}
-function renderLokClientCard(c,holderId=''){
- const photo=c?.docs?.idFront||'';
- const cardId='lokCard_'+String(c?.id||'draft').replace(/[^A-Za-z0-9_-]/g,'');
- const qrId='lokQr_'+String(c?.id||'draft').replace(/[^A-Za-z0-9_-]/g,'');
- const html=`
- <div class="lok-client-card" id="${cardId}">
-  <div class="lok-client-card-head">
-   <div class="lok-client-brand"><b>LOK<span>AutoMoto</span></b><small>LOCATION · VENTE · SERVICES</small></div>
-   <div class="lok-client-title">CARTE CLIENT<small>SIMPLE · FIABLE · PROCHE DE VOUS</small></div>
-  </div>
-  <div class="lok-client-body">
-   <div class="lok-client-portrait">${photo?'<img src="'+photo+'" alt="Photo client">':'<div class="empty">👤</div>'}</div>
-   <div class="lok-client-fields">
-    <div class="lok-client-field"><label>Nom</label><div class="v">${esc(c?.name||'-')}</div></div>
-    <div class="lok-client-field"><label>Prénom</label><div class="v">${esc(c?.first||'-')}</div></div>
-    <div class="lok-client-row">
-     <div class="lok-client-field"><label>Sexe</label><div class="v">${esc(lokClientSex(c?.sex||''))}</div></div>
-     <div class="lok-client-field"><label>Nationalité</label><div class="v">${esc(c?.nationality||'-')}</div></div>
-     <div class="lok-client-field"><label>Date de naissance</label><div class="v">${esc(c?.birthDate||'-')}</div></div>
-    </div>
-    <div class="lok-client-row two">
-     <div class="lok-client-field"><label>Lieu de naissance</label><div class="v">${esc(c?.birthPlace||'-')}</div></div>
-     <div class="lok-client-field" style="display:flex;justify-content:flex-end"><div id="${qrId}" class="lok-client-qr" title="QR client LOCautomoto"></div></div>
-    </div>
-    <div class="lok-client-field lok-client-id"><label>ID CLIENT LOK AUTOMOTO</label><div class="v">${esc(lokClientDisplayId(c))}</div></div>
-   </div>
-  </div>
-  <div class="lok-client-card-foot"><div>🚗 VOITURES</div><div>🏍️ MOTOS</div><div>🚐 UTILITAIRES</div><div><b>LOK AUTOMOTO</b><br><small>VOTRE MOBILITÉ, NOTRE PRIORITÉ</small></div></div>
- </div>`;
- if(holderId){const h=document.getElementById(holderId);if(h)h.innerHTML=html}
- setTimeout(()=>{
-   const q=document.getElementById(qrId);
-   if(q && window.QRCode){
-     q.innerHTML='';
-     new QRCode(q,{text:lokClientDeepLink(c),width:104,height:104,correctLevel:QRCode.CorrectLevel.M});
-   }else if(q){q.innerHTML='<span style="font-size:10px;text-align:center">QR indisponible hors connexion</span>'}
- },30);
- return html;
-}
-window.renderLokClientCard=renderLokClientCard;
-function openLokClientCard(id){
- const c=S.clients.find(x=>x.id===id); if(!c)return toast('Client introuvable');
- openModal(`<div class="modal-head"><h2 style="margin:0">🪪 Carte client LOK AutoMoto</h2><div class="actions"><button class="close" onclick="closeModal()">✕</button></div></div><div id="lokClientCardHolder"></div><div class="lok-card-toolbar"><button class="btn" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER LES INFORMATIONS</button><button class="btn red" onclick="printLokClientCard()">🖨️ IMPRIMER LA CARTE</button></div>`);
- setTimeout(()=>renderLokClientCard(c,'lokClientCardHolder'),20);
-}
-window.openLokClientCard=openLokClientCard;
-function printLokClientCard(){
- document.body.classList.add('lok-print-card');
- const done=()=>document.body.classList.remove('lok-print-card');
- window.addEventListener('afterprint',done,{once:true});
- window.print();
- setTimeout(done,1500);
-}
-window.printLokClientCard=printLokClientCard;
-function openClientFromDeepLink(){
- try{
-   const id=new URL(window.location.href).searchParams.get('client');
-   if(!id||!S.currentUser)return;
-   const c=S.clients.find(x=>x.id===id);
-   if(c)setTimeout(()=>openLokClientCard(id),80);
- }catch(e){}
-}
-window.openClientFromDeepLink=openClientFromDeepLink;
-
 function saveClient(id){
- const old=S.clients.find(c=>c.id===id)||{};const c={id:id||uid('c'),name:document.getElementById('cname').value.trim(),first:document.getElementById('cfirst').value.trim(),birthDate:document.getElementById('cbirth')?.value||'',birthPlace:document.getElementById('cbirthplace')?.value.trim()||'',sex:document.getElementById('csex')?.value||'',nationality:document.getElementById('cnationality')?.value.trim()||'',identityDocType:document.getElementById('cidDocType')?.value||'id',phone:document.getElementById('cphone').value.trim(),email:document.getElementById('cemail').value.trim(),address:document.getElementById('caddr').value.trim(),residenceAddress:document.getElementById('cresidenceaddr')?.value.trim()||'',rating:automaticClientStatusFromData({name:document.getElementById('cname')?.value||'',first:document.getElementById('cfirst')?.value||'',birthDate:document.getElementById('cbirth')?.value||'',nationality:document.getElementById('cnationality')?.value||''},id),note:old.note||'',tourist:document.getElementById('ctourist')?.value==='oui',travelTicketData:(photoDraft.travelTicketData&&Object.keys(photoDraft.travelTicketData).length?{...photoDraft.travelTicketData}:{...(old.travelTicketData||{})}),docs:{...(old.docs||{})}};
+ const old=S.clients.find(c=>c.id===id)||{};const c={id:id||uid('c'),name:document.getElementById('cname').value.trim(),first:document.getElementById('cfirst').value.trim(),birthDate:document.getElementById('cbirth')?.value||'',sex:document.getElementById('csex')?.value||'',nationality:document.getElementById('cnationality')?.value.trim()||'',identityDocType:document.getElementById('cidDocType')?.value||'id',phone:document.getElementById('cphone').value.trim(),email:document.getElementById('cemail').value.trim(),address:document.getElementById('caddr').value.trim(),residenceAddress:document.getElementById('cresidenceaddr')?.value.trim()||'',rating:automaticClientStatusFromData({name:document.getElementById('cname')?.value||'',first:document.getElementById('cfirst')?.value||'',birthDate:document.getElementById('cbirth')?.value||'',nationality:document.getElementById('cnationality')?.value||''},id),note:old.note||'',tourist:document.getElementById('ctourist')?.value==='oui',travelTicketData:(photoDraft.travelTicketData&&Object.keys(photoDraft.travelTicketData).length?{...photoDraft.travelTicketData}:{...(old.travelTicketData||{})}),permitData:(photoDraft.permitData&&Object.keys(photoDraft.permitData).length?JSON.parse(JSON.stringify(photoDraft.permitData)):{...(old.permitData||{})}),docs:{...(old.docs||{})}};
  for(const k of ['idFront','idBack','permitFront','permitBack','travelTicket','residenceProof','addressProof']){const d=photoDraft.clientDocs?.[k];if(d?.src)c.docs[k]=d.src;else if(!d&&c.docs[k]&&photoDraft.clientDocs&&!(k in photoDraft.clientDocs))delete c.docs[k]}
  if(!c.name||!c.first){toast('Nom et prénom requis');return}if(id)S.clients=S.clients.map(x=>x.id===id?c:x);else S.clients.push(c);rememberClientRisk(c);save();
  if(returnToRentalAfterClient){
@@ -18067,7 +18058,7 @@ function clientDetail(id){
  const c=S.clients.find(x=>x.id===id), rs=S.rentals.filter(r=>r.clientId===id).sort((a,b)=>b.created.localeCompare(a.created));
  openModal(`<div class="modal-head"><div class="client-identity">${clientDocThumbs(c)}<h2 style="margin:0">${statusIcon(c)} 👤 ${esc(c.first+' '+c.name)}</h2></div><div class="actions"><button class="close" onclick="closeModal()">✕</button></div></div>
  <div class="grid two"><div class="card"><div class="muted">⚧ Sexe</div><b>${esc(c.sex||'-')}</b><div class="muted" style="margin-top:10px">📞 Téléphone</div><b>${esc(c.phone||'-')}</b><div class="muted" style="margin-top:10px">✉️ E-mail</div><b>${esc(c.email||'-')}</b><div class="muted" style="margin-top:10px">🏠 Adresse</div><b>${esc(c.address||'-')}</b><div class="muted" style="margin-top:10px">📍 Adresse de résidence</div><b>${esc(c.residenceAddress||'-')}</b></div>
- <div class="card"><div class="muted">✈️ Touriste</div><b>${c.tourist?'Oui':'Non'}</b><div class="muted" style="margin-top:10px">Statut automatique</div><b>${esc(c.rating||'Nouveau client')}</b><div class="muted" style="margin-top:10px">🎂 Lieu de naissance</div><b>${esc(c.birthPlace||'-')}</b><button class="btn small" style="margin-top:12px" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER</button><button class="btn small red" style="margin-top:8px" onclick="openLokClientCard('${id}')">🪪 CARTE CLIENT</button></div></div>
+ <div class="card"><div class="muted">✈️ Touriste</div><b>${c.tourist?'Oui':'Non'}</b><div class="muted" style="margin-top:10px">Statut automatique</div><b>${esc(c.rating||'Nouveau client')}</b><button class="btn small" style="margin-top:12px" onclick="clientForm(S.clients.find(x=>x.id==='${id}'))">✏️ MODIFIER</button></div></div>
  <h3>🪪 Documents</h3><div class="photo-grid">${docCard(c.docs?.idFront,'ID recto','idFront')}${docCard(c.docs?.idBack,'ID verso','idBack')}${docCard(c.docs?.permitFront,'Permis recto','permitFront')}${docCard(c.docs?.permitBack,'Permis verso','permitBack')}${c.docs?.addressProof?docCard(c.docs.addressProof,"Justificatif d'adresse",'addressProof'):''}${c.docs?.residenceProof?docCard(c.docs.residenceProof,"Justificatif de résidence",'residenceProof'):''}${c.docs?.travelTicket?`<div class="photo"><img src="${c.docs.travelTicket}" onerror="this.style.opacity=.15"><div class="pbody"><b>Billet / titre de voyage</b><button class="btn small" style="margin-top:8px;width:100%" onclick="openClientTravelTicketDetails('${id}')">✈️ DÉTAILS DU VOYAGE</button></div></div>`:''}</div>
  <h3>📋 Historique de location (${rs.length})</h3><div class="list">${rs.length?rs.map(r=>`<div class="list-item"><div><b>${esc(r.id)}</b><div>${esc(carName(r.carId))} · ${esc(r.startDate)} → ${esc(r.returnDate)}</div><div class="muted">${money(r.total)} · ${esc(r.status)}</div></div><button class="btn small" onclick="rentalDetail('${r.id}')">👁️</button></div>`).join(''):'<div class="notice">Aucune location.</div>'}</div>`);
 }
@@ -39435,8 +39426,8 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
        cameraBeep(true);
        setTimeout(()=>continueClientIdentityAutomatically(),140);
      }else{
-       setOCRStatus('⚠️ Document photographié, mais les informations essentielles restent insuffisantes.','bad');
-       setTimeout(()=>showDocumentUnreadable(reviewKey,'Document non identifié avec assez de fiabilité'),180);
+       setOCRStatus('⚠️ Document détecté — lecture partielle des informations.','bad');
+       setTimeout(()=>showDocumentUnreadable(reviewKey,'Lecture partielle — document détecté, informations à relire'),180);
      }
    }catch(e){
      console.error('Analyse identité prioritaire',e);
@@ -39903,254 +39894,453 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
 <script id="LOC_CLIENT_FLOW_CONTROLLER_20260904">
 /* ===== LOCautomoto — contrôleur unique Nouveau client 1→5 ===== */
 (function(){
-  const SCOPE='client';
   let reached=1;
-
-  function current(){
-    return Number(typeof clientWizardStep!=='undefined' ? clientWizardStep : (window.clientWizardStep||1))||1;
-  }
-
-  function setCurrent(n){
-    if(typeof clientWizardStep!=='undefined') clientWizardStep=n;
-    window.clientWizardStep=n;
-  }
-
+  function current(){return Number(typeof clientWizardStep!=='undefined'?clientWizardStep:(window.clientWizardStep||1))||1;}
+  function setCurrent(n){if(typeof clientWizardStep!=='undefined')clientWizardStep=n;window.clientWizardStep=n;}
   function refreshProgress(){
     const cur=current();
     document.querySelectorAll('[data-step-dot]').forEach(el=>{
-      const n=Number(el.dataset.stepDot||0);
-      const locked=n>reached;
-      el.classList.toggle('active',n===cur);
-      el.classList.toggle('done',n<cur);
-      el.classList.toggle('wizard-step-locked',locked);
-      el.setAttribute('aria-disabled',locked?'true':'false');
-      el.title=locked?'Étape non encore atteinte':`Aller à l’étape ${n}`;
+      const n=Number(el.dataset.stepDot||0),locked=n>reached;
+      el.classList.toggle('active',n===cur);el.classList.toggle('done',n<cur);el.classList.toggle('wizard-step-locked',locked);
+      el.setAttribute('aria-disabled',locked?'true':'false');el.title=locked?'Étape non encore atteinte':`Aller à l’étape ${n}`;
       if(el.tagName!=='BUTTON')el.setAttribute('tabindex',locked?'-1':'0');
     });
-    const label=document.getElementById('clientWizardLabel');
-    if(label)label.textContent=`Étape ${cur} sur 5`;
+    const label=document.getElementById('clientWizardLabel');if(label)label.textContent=`Étape ${cur} sur 5`;
   }
-
   function show(step){
-    const target=Math.max(1,Math.min(5,Number(step)||1));
-    const cur=current();
-
-    // Progression normale : une seule étape en avant à la fois.
-    // Autorise toujours l'enchaînement normal vers l'étape suivante.
-    // Le verrouillage ne concerne que les sauts manuels de plusieurs étapes.
-    if(target>reached && target>cur+1){
-      toast('Cette étape n’est pas encore disponible');
-      refreshProgress();
-      return false;
-    }
-
-    if(target===cur+1) reached=Math.max(reached,target);
+    const target=Math.max(1,Math.min(5,Number(step)||1)),cur=current();
+    if(target>reached&&target>cur+1){toast('Cette étape n’est pas encore disponible');refreshProgress();return false;}
+    if(target===cur+1)reached=Math.max(reached,target);
     if(target<=reached){
-      setCurrent(target);
-      document.querySelectorAll('.client-wizard-step').forEach(el=>el.classList.remove('active'));
-      document.getElementById(`clientWizardStep${target}`)?.classList.add('active');
-      refreshProgress();
-
-      if(target===4){
-        try{refreshClientSourceColors?.()}catch(e){}
-        try{
-          const src=photoDraft.clientDocs?.idFront?.src||'';
-          const holder=document.getElementById('clientIdentityControlPhoto');
-          const img=document.getElementById('clientIdentityControlPhotoImg');
-          if(holder && img && src){
-            img.src=src;
-            holder.style.display='block';
-          }else if(holder){
-            holder.style.display='none';
-          }
-        }catch(e){}
-      }
-      if(target===5){
-        try{renderClientWizardSummary?.()}catch(e){}
-      }
-      if(target===1 && photoDraft?.travelTicketData){
-        setTimeout(()=>{try{applyTravelTicketReference?.(photoDraft.travelTicketData)}catch(e){}},30);
-      }
-      const box=document.getElementById('modalBox');
-      if(box)box.scrollTop=0;
-      return true;
+      setCurrent(target);document.querySelectorAll('.client-wizard-step').forEach(el=>el.classList.remove('active'));
+      document.getElementById(`clientWizardStep${target}`)?.classList.add('active');refreshProgress();
+      if(target===4)try{refreshClientSourceColors?.()}catch(e){}
+      if(target===5)try{renderClientWizardSummary?.()}catch(e){}
+      if(target===1&&photoDraft?.travelTicketData)setTimeout(()=>{try{applyTravelTicketReference?.(photoDraft.travelTicketData)}catch(e){}},30);
+      const box=document.getElementById('modalBox');if(box)box.scrollTop=0;return true;
     }
     return false;
   }
-
   function next(){
     const step=current();
+    if(step===1){const choice=document.getElementById('ctourist')?.value||'non';if(choice==='oui'&&!photoDraft.clientDocs?.travelTicket&&!photoDraft.travelTicketSkipped){toast('Prends la photo du billet / titre de voyage ou utilise PASSER');scannerDocumentIdentite('travelTicket');return;}show(2);return;}
+    if(step===2){const type=document.getElementById('cidDocType')?.value||'id',missing=[];if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':"identité recto");if(type==='id'&&!photoDraft.clientDocs?.idBack)missing.push('identité verso');if(missing.length){confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,3);return;}show(3);return;}
+    if(step===3){const missing=[];if(!photoDraft.clientDocs?.permitFront)missing.push('permis recto');if(!photoDraft.clientDocs?.permitBack)missing.push('permis verso');if(missing.length){confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,4);return;}Promise.resolve(typeof analyzePermitAutomatically==='function'?analyzePermitAutomatically():null).finally(()=>show(4));return;}
+    if(step===4){const name=document.getElementById('cname')?.value.trim()||'',first=document.getElementById('cfirst')?.value.trim()||'';if(!name||!first){toast('Nom et prénom requis');try{refreshClientSourceColors?.()}catch(e){}return;}const email=document.getElementById('cemail')?.value.trim()||'';if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Adresse e-mail invalide');return;}try{refreshClientSourceColors?.()}catch(e){}show(5);}
+  }
+  function prev(){const step=current();if(step>1)show(step-1);}
+  function chooseTourist(value){const v=value==='oui'?'oui':'non',field=document.getElementById('ctourist');if(field)field.value=v;updateTouristTicketVisibility();if(v==='non'){photoDraft.travelTicketSkipped=true;reached=Math.max(reached,2);setTimeout(()=>show(2),80);return;}photoDraft.travelTicketSkipped=false;toast('Touriste — photo du billet / titre de voyage');setTimeout(()=>scannerDocumentIdentite('travelTicket'),120);}
+  function continueDocument(key=''){document.getElementById('photoReviewOverlay')?.remove();if(key==='travelTicket'){show(2);return true;}if(key==='idFront'){const type=document.getElementById('cidDocType')?.value||'id';if(type==='id')setTimeout(()=>scannerDocumentIdentite('idBack'),120);else show(3);return true;}if(key==='idBack'){show(3);return true;}if(key==='permitFront'){setTimeout(()=>scannerDocumentIdentite('permitBack'),120);return true;}if(key==='permitBack'){Promise.resolve(typeof analyzePermitAutomatically==='function'?analyzePermitAutomatically():null).finally(()=>show(4));return true;}if(key==='addressProof'||key==='residenceProof'){toast('Justificatif enregistré');return true;}return false;}
+  function passDocument(key=''){document.getElementById('photoReviewOverlay')?.remove();if(photoDraft.clientDocs&&key){delete photoDraft.clientDocs[key];const preview=document.getElementById(`prev_clientDocs_${key}`),card=document.getElementById(`card_clientDocs_${key}`),meta=document.getElementById(`meta_clientDocs_${key}`);if(preview)preview.textContent='📷 Document non scanné';if(card)card.classList.remove('done');if(meta)meta.textContent='Document non renseigné';}if(key==='travelTicket'){photoDraft.travelTicketSkipped=true;show(2);return;}if(/^id/.test(key)){show(2);return;}if(/^permit/.test(key)){show(3);return;}if(key==='addressProof'||key==='residenceProof'){show(4);return;}show(current());}
+  const baseClientForm=window.clientForm;if(typeof baseClientForm==='function'){window.clientForm=clientForm=function(...args){reached=1;const r=baseClientForm.apply(this,args);setCurrent(1);setTimeout(refreshProgress,0);return r;};}
+  window.clientWizardShowStep=clientWizardShowStep=show;window.clientWizardNext=clientWizardNext=next;window.clientWizardPrev=clientWizardPrev=prev;window.chooseTouristStatus=chooseTouristStatus=chooseTourist;window.continueReviewedDocument=continueReviewedDocument=continueDocument;window.passReviewedDocumentToStart=passReviewedDocumentToStart=passDocument;
+  document.addEventListener('click',e=>{const dot=e.target.closest('[data-step-dot]');if(!dot)return;const n=Number(dot.dataset.stepDot||0);if(n>reached){e.preventDefault();e.stopImmediatePropagation();toast('Cette étape n’est pas encore disponible');}},true);
+  setCurrent(current());reached=Math.max(1,current());setTimeout(refreshProgress,0);
+})();
+</script>
 
-    if(step===1){
-      const choice=document.getElementById('ctourist')?.value||'non';
-      if(choice==='oui' && !photoDraft.clientDocs?.travelTicket && !photoDraft.travelTicketSkipped){
-        toast('Prends la photo du billet / titre de voyage ou utilise PASSER');
-        scannerDocumentIdentite('travelTicket');
-        return;
-      }
-      show(2);
-      return;
+<script>
+/* ===== LOCautomoto — détection permis multi-format + catégories ===== */
+(function(){
+ const MOTO_CATS=new Set(['AM','A1','A2','A']);
+ const ALL_CATS=['AM','A1','A2','A','B1','B','BE','C1','C1E','C','CE','D1','D1E','D','DE'];
+ window.LOC_PERMIT_CATEGORIES=ALL_CATS.slice();
+
+ function cleanPermitText(raw=''){
+   return String(raw||'').toUpperCase().replace(/[|]/g,'I').replace(/[^A-Z0-9À-ÖØ-Ý/.\n -]+/g,' ').replace(/[ \t]+/g,' ').replace(/\n{2,}/g,'\n');
+ }
+ function dateISO(v=''){
+   const m=String(v).match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/); if(!m)return '';
+   let y=m[3]; if(y.length===2)y=(Number(y)>40?'19':'20')+y;
+   return `${y.padStart(4,'0')}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+ }
+ function parsePermitCategories(raw=''){
+   const text=cleanPermitText(raw), rows=text.split('\n').map(x=>x.trim()).filter(Boolean), found={};
+   const catRx=/\b(AM|A1|A2|A|B1|BE|B|C1E|C1|CE|C|D1E|D1|DE|D)\b/g;
+   for(let i=0;i<rows.length;i++){
+     let row=rows[i], m;
+     while((m=catRx.exec(row))){
+       const cat=m[1];
+       const zone=[rows[i-1]||'',row,rows[i+1]||''].join(' ');
+       const dates=[...zone.matchAll(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/g)].map(x=>dateISO(x[0])).filter(Boolean);
+       if(!found[cat])found[cat]={category:cat,obtained:dates[0]||'',validTo:dates[1]||'',detected:true};
+     }
+   }
+   return ALL_CATS.filter(c=>found[c]).map(c=>found[c]);
+ }
+ function parsePermitDates(raw=''){
+   const text=cleanPermitText(raw);
+   const pick=(rx)=>{const m=text.match(rx);return m?dateISO(m[1]||m[0]):''};
+   return {
+     issueDate:pick(/(?:4A|DATE D['’ ]?EMISSION|DATE OF ISSUE|ISSUED?)\s*[:.-]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/i),
+     expiryDate:pick(/(?:4B|VALABLE JUSQU['’ ]?AU|DATE OF EXPIRY|EXPIRY|EXPIRES?)\s*[:.-]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/i)
+   };
+ }
+ function permitHasMoto(data={}){return (data.categories||[]).some(x=>MOTO_CATS.has(String(x.category||'').toUpperCase()));}
+ window.parsePermitCategories=parsePermitCategories;
+ window.permitHasMoto=permitHasMoto;
+
+ function renderPermitDetection(data={}){
+   let box=document.getElementById('locPermitDetectionAlert');
+   const holder=document.getElementById('clientWizardPermitHolder');
+   if(!holder)return;
+   if(!box){box=document.createElement('div');box.id='locPermitDetectionAlert';box.className='notice';holder.parentNode?.insertBefore(box,holder.nextSibling);}
+   const cats=(data.categories||[]);
+   const lines=cats.length?cats.map(x=>`${x.category}${x.obtained?` · obtenu ${x.obtained}`:''}${x.validTo?` · valable jusqu’au ${x.validTo}`:''}`).join('<br>'):'Aucune catégorie lisible';
+   const moto=permitHasMoto(data);
+   box.className='notice '+(moto?'success':'warning');
+   box.innerHTML=`<b>${moto?'✅ Permis moto détecté':'❓ Attention : aucun permis moto détecté'}</b><br>${lines}${data.expiryDate?`<br>Validité du permis : <b>${esc(data.expiryDate)}</b>`:''}`;
+ }
+ window.renderPermitDetection=renderPermitDetection;
+
+ const previous=window.analyzePermitAutomatically;
+ window.analyzePermitAutomatically=analyzePermitAutomatically=async function(){
+   const front=photoDraft.clientDocs?.permitFront?.src||'', back=photoDraft.clientDocs?.permitBack?.src||'';
+   if(!front&&!back)return null;
+   if(!window.Tesseract)return previous?previous():null;
+   try{
+     let raw='';
+     for(const item of [front,back].filter(Boolean)){
+       let r=null;
+       try{r=await Tesseract.recognize(item,priorityOCRLanguages().join('+'));}
+       catch(e){r=await Tesseract.recognize(item,'eng+fra');}
+       raw+='\n'+(r?.data?.text||'');
+     }
+     const identity=extractInternationalIdentityData(raw)||{};
+     compareAndFillClientField('cname',identity.surname,'permis');
+     compareAndFillClientField('cfirst',identity.first,'permis');
+     compareAndFillClientField('cbirth',normalizeIdentityDateForInput(identity.birthDate),'permis');
+     const sx=normalizeIdentitySex(identity.sex); if(sx)compareAndFillClientField('csex',sx,'permis');
+     const nat=nationalityFromDetection(identity); if(nat)compareAndFillClientField('cnationality',nat,'permis');
+     const dates=parsePermitDates(raw);
+     const categories=parsePermitCategories(raw);
+     const detected=detectCountryFromDocumentText(raw,'permit');
+     const data={...identity,...dates,categories,rawText:raw,detectedCountryCode:detected.code||'',country:detected.country||identity.country||''};
+     photoDraft.permitData=data;
+     renderPermitDetection(data);
+     refreshClientSourceColors?.();
+     return data;
+   }catch(e){console.error('Analyse permis enrichie',e);return previous?previous():null;}
+ };
+})();
+</script>
+
+
+<script id="locautomoto-simple-identity-ocr">
+(function(){
+  let locIdentityTimer=null;
+  let locIdentityRun=0;
+
+  function cleanLine(v=''){
+    return String(v||'').replace(/\r/g,'').replace(/[\t ]+/g,' ').trim();
+  }
+  function cleanName(v=''){
+    let s=String(v||'')
+      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ'’ -]/g,' ')
+      .replace(/\s+/g,' ').trim();
+    const parts=s.split(' ').filter(Boolean);
+    while(parts.length>1 && /^[A-Za-zÀ-ÖØ-öø-ÿ]$/.test(parts[0]) && parts[1].length>=3) parts.shift();
+    s=parts.join(' ');
+    return s.toLowerCase().replace(/(^|[\s'’-])([a-zà-öø-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
+  }
+  const BAD=new Set(['NOM','SURNAME','NAME','LAST NAME','LASTNAME','FAMILY NAME','FAMILYNAME','PRÉNOM','PRENOM','PRÉNOMS','PRENOMS','GIVEN NAME','GIVEN NAMES','GIVENNAME','GIVENNAMES','FIRST NAME','FIRSTNAME','SEXE','SEX','NATIONALITÉ','NATIONALITE','NATIONALITY']);
+  function goodName(v=''){
+    const s=cleanName(v);
+    const c=s.replace(/[\s'’-]/g,'');
+    return c.length>=2 && !BAD.has(s.toUpperCase()) && !/^[MFHX]$/i.test(c);
+  }
+  function nextUseful(lines,i){
+    for(let j=i+1;j<Math.min(lines.length,i+4);j++){
+      const v=cleanName(lines[j]);
+      if(goodName(v) && !/^(DATE|NATIONAL|SEXE|SEX|NÉE|NEE|BIRTH|NOM|SURNAME|PRÉNOM|PRENOM|GIVEN)/i.test(v)) return v;
     }
-
-    if(step===2){
-      const type=document.getElementById('cidDocType')?.value||'id';
-      const missing=[];
-      if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':"identité recto");
-      if(type==='id' && !photoDraft.clientDocs?.idBack)missing.push('identité verso');
-      if(missing.length){
-        confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,3);
-        return;
-      }
-      show(3);
-      return;
+    return '';
+  }
+  function valueByLabel(lines,labelRx){
+    for(let i=0;i<lines.length;i++){
+      const l=lines[i];
+      if(!labelRx.test(l)) continue;
+      let v=cleanLine(l.replace(labelRx,'').replace(/^\s*[:.\-–—]+\s*/,'').trim());
+      v=cleanName(v);
+      if(goodName(v)) return v;
+      v=nextUseful(lines,i);
+      if(goodName(v)) return v;
     }
-
-    if(step===3){
-      const missing=[];
-      if(!photoDraft.clientDocs?.permitFront)missing.push('permis recto');
-      if(!photoDraft.clientDocs?.permitBack)missing.push('permis verso');
-      if(missing.length){
-        confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,4);
-        return;
-      }
-      Promise.resolve(typeof analyzePermitAutomatically==='function' ? analyzePermitAutomatically() : null)
-        .finally(()=>show(4));
-      return;
+    return '';
+  }
+  function parseDate(text=''){
+    const m=String(text).match(/\b(0?[1-9]|[12]\d|3[01])[\/.\-](0?[1-9]|1[0-2])[\/.\-]((?:19|20)\d{2})\b/);
+    if(!m)return '';
+    return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  }
+  function parseIdentity(text=''){
+    const lines=String(text||'').split(/\n+/).map(cleanLine).filter(Boolean);
+    const all=lines.join('\n');
+    let surname=valueByLabel(lines,/^(?:NOM|SURNAME|LAST\s*NAME|FAMILY\s*NAME)\b\s*/i);
+    let first=valueByLabel(lines,/^(?:PR[ÉE]NOM(?:S)?|GIVEN\s*NAME(?:S)?|FIRST\s*NAME)\b\s*/i);
+    if(!surname){
+      const m=all.match(/(?:^|\n).*?(?:NOM|SURNAME|LAST\s*NAME|FAMILY\s*NAME)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{1,35})(?:\n|$)/im);
+      if(m && goodName(m[1])) surname=cleanName(m[1]);
     }
-
-    if(step===4){
-      const name=document.getElementById('cname')?.value.trim()||'';
-      const first=document.getElementById('cfirst')?.value.trim()||'';
-      if(!name||!first){
-        toast('Nom et prénom requis');
-        try{refreshClientSourceColors?.()}catch(e){}
-        return;
+    if(!first){
+      const m=all.match(/(?:^|\n).*?(?:PR[ÉE]NOM(?:S)?|GIVEN\s*NAME(?:S)?|FIRST\s*NAME)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{1,45})(?:\n|$)/im);
+      if(m && goodName(m[1])) first=cleanName(m[1]);
+    }
+    let sex='';
+    const sm=all.match(/(?:SEXE|SEX)\s*[:.\-]?\s*([MFHX])\b/i);
+    if(sm) sex=/^[MH]$/i.test(sm[1])?'M':/^[F]$/i.test(sm[1])?'F':'X';
+    let nationality='';
+    const nm=all.match(/(?:NATIONALIT[ÉE]|NATIONALITY)\s*[:.\-]?\s*([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þa-zà-öø-ÿ'’ -]{2,30})/i);
+    if(nm){
+      nationality=cleanLine(nm[1]).replace(/\b(?:DATE|SEXE|SEX|BIRTH).*$/i,'').trim();
+      nationality=nationality.charAt(0).toUpperCase()+nationality.slice(1).toLowerCase();
+    }
+    if(!nationality && /R[ÉE]PUBLIQUE FRAN[ÇC]AISE|\bFRA\b/i.test(all)) nationality='Française';
+    const b=all.match(/(?:DATE\s+DE\s+NAISSANCE|DATE\s+OF\s+BIRTH|BIRTH\s*DATE|DOB)\s*[:.\-]?\s*([^\n]{5,24})/i);
+    const birthDate=parseDate(b?.[1]||'') || parseDate(all);
+    return {surname:cleanName(surname),first:cleanName(first),birthDate,nationality,sex,rawText:all};
+  }
+  function setValue(id,value){
+    if(!value)return;
+    const el=document.getElementById(id);
+    if(el)el.value=value;
+  }
+  function applyData(d){
+    if(goodName(d.surname)) setValue('cname',d.surname);
+    if(goodName(d.first)) setValue('cfirst',d.first);
+    setValue('cbirth',d.birthDate);
+    setValue('cnationality',d.nationality);
+    const sex=document.getElementById('csex');
+    if(sex && d.sex) sex.value=d.sex;
+    try{updateClientAge?.()}catch(e){}
+    try{refreshClientSourceColors?.()}catch(e){}
+  }
+  async function simpleAnalyzeIdentity(){
+    const run=++locIdentityRun;
+    const front=photoDraft.clientDocs?.idFront?.src||'';
+    const back=photoDraft.clientDocs?.idBack?.src||'';
+    if(!front && !back)return null;
+    if(!window.Tesseract){ setOCRStatus?.('⚠️ Lecture OCR indisponible.','bad'); return null; }
+    try{
+      setOCRStatus?.('🔎 Lecture de la pièce d’identité…');
+      let text='';
+      if(front){
+        const r=await Tesseract.recognize(front,'fra+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+        if(run!==locIdentityRun)return null;
+        text+='\n'+String(r?.data?.text||'');
       }
-      const email=document.getElementById('cemail')?.value.trim()||'';
-      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-        toast('Adresse e-mail invalide');
-        return;
+      if(back){
+        const r=await Tesseract.recognize(back,'fra+eng',{tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+        if(run!==locIdentityRun)return null;
+        text+='\n'+String(r?.data?.text||'');
       }
-      try{refreshClientSourceColors?.()}catch(e){}
-      show(5);
+      const d=parseIdentity(text);
+      applyData(d);
+      if(goodName(d.surname) && goodName(d.first)){
+        const safeEsc=(v)=>typeof esc==='function'?esc(v):v;
+        setOCRStatus?.(`✅ ${safeEsc(d.surname)} ${safeEsc(d.first)} · informations remplies automatiquement`,'good');
+        cameraBeep?.(true);
+      }else{
+        setOCRStatus?.('⚠️ Nom ou prénom insuffisamment lisible — refaire uniquement la photo si nécessaire.','bad');
+        cameraBeep?.(false);
+      }
+      return d;
+    }catch(e){
+      console.error('OCR identité simple',e);
+      setOCRStatus?.('⚠️ Lecture impossible — refaire la photo.','bad');
+      return null;
     }
   }
+  window.analyzeIdentityDocumentsAutomatically=simpleAnalyzeIdentity;
+  window.runIdentityOCR=async function(){ return simpleAnalyzeIdentity(); };
+  window.scheduleIdentityAutoAnalysis=function(){
+    clearTimeout(locIdentityTimer);
+    locIdentityTimer=setTimeout(simpleAnalyzeIdentity,300);
+  };
+  window.extractIdentityNames=function(raw){
+    const d=parseIdentity(raw); return {surname:d.surname,first:d.first};
+  };
+  window.identityAnalysisIsSufficient=function(d){
+    return goodName(d?.surname||'') && goodName(d?.first||'');
+  };
+  window.showDetectedCountryDecision=async function(){ return true; };
+})();
+</script>
 
-  function prev(){
-    const step=current();
-    if(step>1)show(step-1);
+<script id="locautomoto-single-pass-name-guard">
+(function(){
+  function validPersonName(v=''){
+    const s=String(v||'')
+      .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ'’ -]/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+    const compact=s.replace(/[\s'’-]/g,'');
+    if(compact.length<2)return '';
+    if(/^(SURNAME|GIVENNAME|GIVENNAMES|FIRSTNAME|LASTNAME|FAMILYNAME|NOM|PRENOM|PRENOMS)$/i.test(compact))return '';
+    return s;
   }
 
-  function chooseTourist(value){
-    const v=value==='oui'?'oui':'non';
-    const field=document.getElementById('ctourist');
-    if(field)field.value=v;
-    updateTouristTicketVisibility();
-
-    if(v==='non'){
-      photoDraft.travelTicketSkipped=true;
-      reached=Math.max(reached,2);
-      setTimeout(()=>show(2),80);
-      return;
-    }
-
-    photoDraft.travelTicketSkipped=false;
-    toast('Touriste — photo du billet / titre de voyage');
-    setTimeout(()=>scannerDocumentIdentite('travelTicket'),120);
-  }
-
-  function continueDocument(key=''){
-    document.getElementById('photoReviewOverlay')?.remove();
-
-    if(key==='travelTicket'){
-      show(2);
-      return true;
-    }
-    if(key==='idFront'){
-      const type=document.getElementById('cidDocType')?.value||'id';
-      if(type==='id') setTimeout(()=>scannerDocumentIdentite('idBack'),120);
-      else show(3);
-      return true;
-    }
-    if(key==='idBack'){
-      show(3);
-      return true;
-    }
-    if(key==='permitFront'){
-      setTimeout(()=>scannerDocumentIdentite('permitBack'),120);
-      return true;
-    }
-    if(key==='permitBack'){
-      Promise.resolve(typeof analyzePermitAutomatically==='function' ? analyzePermitAutomatically() : null)
-        .finally(()=>show(4));
-      return true;
-    }
-    if(key==='addressProof' || key==='residenceProof'){
-      toast('Justificatif enregistré');
-      return true;
-    }
-    return false;
-  }
-
-  function passDocument(key=''){
-    document.getElementById('photoReviewOverlay')?.remove();
-
-    if(photoDraft.clientDocs && key){
-      delete photoDraft.clientDocs[key];
-      const preview=document.getElementById(`prev_clientDocs_${key}`);
-      const card=document.getElementById(`card_clientDocs_${key}`);
-      const meta=document.getElementById(`meta_clientDocs_${key}`);
-      if(preview)preview.textContent='📷 Document non scanné';
-      if(card)card.classList.remove('done');
-      if(meta)meta.textContent='Document non renseigné';
-    }
-
-    if(key==='travelTicket'){
-      photoDraft.travelTicketSkipped=true;
-      show(2);
-      return;
-    }
-    if(/^id/.test(key)){ show(2); return; }
-    if(/^permit/.test(key)){ show(3); return; }
-    if(key==='addressProof' || key==='residenceProof'){ show(4); return; }
-    show(current());
-  }
-
-  // Réinitialise les étapes atteintes à chaque ouverture d'un dossier client.
-  const baseClientForm=window.clientForm;
-  if(typeof baseClientForm==='function'){
-    window.clientForm=clientForm=function(...args){
-      reached=1;
-      const r=baseClientForm.apply(this,args);
-      setCurrent(1);
-      setTimeout(refreshProgress,0);
-      return r;
+  const baseFill=window.fillDetectedIdentityData;
+  if(typeof baseFill==='function'){
+    window.fillDetectedIdentityData=fillDetectedIdentityData=function(data){
+      const safe={...(data||{})};
+      safe.surname=validPersonName(safe.surname||safe.lastName||safe.familyName||safe.nom||'');
+      safe.first=validPersonName(safe.first||safe.firstName||safe.givenName||safe.prenom||'');
+      return baseFill(safe);
     };
   }
 
-  // Autorité finale : un seul contrôleur actif pour le parcours client.
-  window.clientWizardShowStep=clientWizardShowStep=show;
-  window.clientWizardNext=clientWizardNext=next;
-  window.clientWizardPrev=clientWizardPrev=prev;
-  window.chooseTouristStatus=chooseTouristStatus=chooseTourist;
-  window.continueReviewedDocument=continueReviewedDocument=continueDocument;
-  window.passReviewedDocumentToStart=passReviewedDocumentToStart=passDocument;
+  const baseEnough=window.identityAnalysisIsSufficient;
+  window.identityAnalysisIsSufficient=identityAnalysisIsSufficient=function(data){
+    const safe={...(data||{})};
+    safe.surname=validPersonName(safe.surname||'');
+    safe.first=validPersonName(safe.first||'');
+    if(!safe.surname || !safe.first)return false;
+    return typeof baseEnough==='function' ? baseEnough(safe) : true;
+  };
+})();
+</script>
 
-  // Empêche uniquement le clic manuel vers une étape pas encore atteinte.
-  document.addEventListener('click',e=>{
-    const dot=e.target.closest('[data-step-dot]');
-    if(!dot)return;
-    const n=Number(dot.dataset.stepDot||0);
-    if(n>reached){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      toast('Cette étape n’est pas encore disponible');
+
+<style id="locautomoto-header-progress-inside-final">
+/* RÈGLE FINALE : le titre + la progression forment physiquement UN SEUL en-tête. */
+#modalBox > .modal-head,
+#modalBox > .modal-header,
+.wizard > .wizard-head,
+.wizard > .wizard-header,
+.vehicle-wizard > .vehicle-wizard-head,
+.vehicle-wizard > .vehicle-step-head{
+  position:sticky!important;
+  top:0!important;
+  z-index:2147483000!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  background:rgba(23,27,31,.98)!important;
+  overflow:hidden!important;
+}
+
+.loc-progress-inside-header{
+  position:static!important;
+  top:auto!important;
+  left:auto!important;
+  right:auto!important;
+  z-index:auto!important;
+  order:99!important;
+  flex:0 0 100%!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:6px 0 0!important;
+  padding:7px 8px 4px!important;
+  box-sizing:border-box!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  border:0!important;
+  transform:none!important;
+}
+
+/* Aucun ancien réglage sticky ne doit reprendre la main une fois la progression dans l'en-tête. */
+.modal-head > .client-wizard-progress,
+.modal-head > .vehicle-wizard-progress,
+.modal-head > .vehicle-model-setup-progress,
+.modal-head > .wizard-progress,
+.modal-head > .wizard-steps,
+.modal-head > .vehicle-step-tabs,
+.modal-head > .vehicle-wizard-steps,
+.modal-head > .step-tabs,
+.modal-head > .steps-nav,
+.modal-header > .client-wizard-progress,
+.modal-header > .vehicle-wizard-progress,
+.modal-header > .vehicle-model-setup-progress,
+.modal-header > .wizard-progress,
+.modal-header > .wizard-steps,
+.modal-header > .vehicle-step-tabs,
+.modal-header > .vehicle-wizard-steps,
+.modal-header > .step-tabs,
+.modal-header > .steps-nav{
+  position:static!important;
+  top:auto!important;
+  z-index:auto!important;
+}
+
+html[data-theme="light"] #modalBox > .modal-head,
+html[data-theme="light"] #modalBox > .modal-header{
+  background:rgba(255,255,255,.98)!important;
+}
+</style>
+
+<script id="locautomoto-mount-progress-in-header-final">
+(function(){
+  const PROGRESS_SELECTOR = [
+    '.client-wizard-progress',
+    '.vehicle-wizard-progress',
+    '.vehicle-model-setup-progress',
+    '.wizard-progress',
+    '.wizard-steps',
+    '.vehicle-step-tabs',
+    '.vehicle-wizard-steps',
+    '.step-tabs',
+    '.steps-nav'
+  ].join(',');
+
+  const HEADER_SELECTOR = [
+    ':scope > .modal-head',
+    ':scope > .modal-header',
+    ':scope > .wizard-head',
+    ':scope > .wizard-header',
+    ':scope > .vehicle-wizard-head',
+    ':scope > .vehicle-step-head',
+    ':scope > .sheet-head',
+    ':scope > .dialog-head'
+  ].join(',');
+
+  function hostFor(nav){
+    return nav.closest('#modalBox,.modal-box,.wizard,.vehicle-wizard,.sheet,.dialog');
+  }
+
+  function findHeader(host){
+    if(!host) return null;
+    try{
+      const direct = host.querySelector(HEADER_SELECTOR);
+      if(direct) return direct;
+    }catch(e){}
+    return host.querySelector('.modal-head,.modal-header,.wizard-head,.wizard-header,.vehicle-wizard-head,.vehicle-step-head,.sheet-head,.dialog-head');
+  }
+
+  function mountOne(nav){
+    if(!nav || nav.classList.contains('loc-progress-inside-header')) return;
+    const host = hostFor(nav);
+    const header = findHeader(host);
+    if(!header || header.contains(nav)) {
+      nav?.classList.add('loc-progress-inside-header');
+      return;
     }
-  },true);
+    header.appendChild(nav);
+    nav.classList.add('loc-progress-inside-header');
+  }
 
-  setCurrent(current());
-  reached=Math.max(1,current());
-  setTimeout(refreshProgress,0);
+  function mountAll(){
+    document.querySelectorAll(PROGRESS_SELECTOR).forEach(mountOne);
+  }
+
+  window.locMountAllWizardProgressIntoHeaders = mountAll;
+  document.addEventListener('DOMContentLoaded', mountAll);
+
+  const observer = new MutationObserver(()=>mountAll());
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+
+  const oldOpenModal = window.openModal;
+  if(typeof oldOpenModal === 'function'){
+    window.openModal = function(){
+      const r = oldOpenModal.apply(this,arguments);
+      requestAnimationFrame(mountAll);
+      setTimeout(mountAll,0);
+      setTimeout(mountAll,60);
+      return r;
+    };
+  }
 })();
 </script>
 
