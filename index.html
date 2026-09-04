@@ -15067,8 +15067,11 @@ function clientForm(c=null){
    <div class="field">
      <label>Type de pièce</label>
      <select id="cidDocType" onchange="clientIdentityTypeSelected()">
-       <option value="id" ${c?.identityDocType==='passport'?'':'selected'}>🪪 Pièce d'identité</option>
+       <option value="auto" ${!c?.identityDocType?'selected':''}>🔎 Détection automatique</option>
+       <option value="id" ${c?.identityDocType==='id'?'selected':''}>🪪 Pièce d'identité</option>
        <option value="passport" ${c?.identityDocType==='passport'?'selected':''}>🛂 Passeport</option>
+       <option value="visa" ${c?.identityDocType==='visa'?'selected':''}>🛃 Visa</option>
+       <option value="other" ${c?.identityDocType==='other'?'selected':''}>📄 Autre document d'identité</option>
      </select>
    </div>
    
@@ -15194,29 +15197,32 @@ function clientIdentityTypeSelected(){
  updateIdentityDocumentMode();
  updateClientWizardIdentityCards();
 
- const type=document.getElementById('cidDocType')?.value||'id';
+ const type=document.getElementById('cidDocType')?.value||'auto';
 
- // Laisse le DOM se mettre à jour, puis ouvre immédiatement la caméra.
  setTimeout(()=>{
-   if(type==='passport'){
-     toast('Passeport sélectionné — prends la photo de la page identité');
-   }else{
-     toast("Pièce d'identité sélectionnée — prends la photo du recto");
-   }
-   scannerDocumentIdentite('idFront');
- },120);
+   const messages={
+     auto:'Scanne le document — LOCautomoto détectera automatiquement son type',
+     id:"Pièce d'identité sélectionnée — scanne le recto",
+     passport:'Passeport sélectionné — scanne la page identité',
+     visa:'Visa sélectionné — scanne le recto',
+     other:"Document d'identité sélectionné — scanne le recto"
+   };
+   toast(messages[type]||messages.auto);
+ },80);
 }
 window.clientIdentityTypeSelected=clientIdentityTypeSelected;
 
 function updateClientWizardIdentityCards(){
- const type=document.getElementById('cidDocType')?.value||'id';
+ const type=document.getElementById('cidDocType')?.value||'auto';
  const front=document.getElementById('card_clientDocs_idFront');
  const back=document.getElementById('card_clientDocs_idBack');
  if(front){
    const h=front.querySelector('h4');
-   if(h)h.textContent=type==='passport'?'🛂 Page identité du passeport':"🪪 Carte d'identité recto";
+   if(h)h.textContent=type==='passport'?'🛂 Scan passeport':'📷 Scan recto';
  }
  if(back){
+   const h=back.querySelector('h4');
+   if(h)h.textContent='📷 Scan verso';
    back.style.display=type==='passport'?'none':'';
  }
 }
@@ -15269,7 +15275,7 @@ function documentNextKey(key=''){
 function continueReviewedDocument(key=''){
  document.getElementById('photoReviewOverlay')?.remove();
 
- const identityType=document.getElementById('cidDocType')?.value||'id';
+ const identityType=document.getElementById('cidDocType')?.value||'auto';
  if(key==='idFront' && identityType==='passport'){
    setTimeout(()=>clientWizardShowStep(3),120);
    return true;
@@ -15277,7 +15283,7 @@ function continueReviewedDocument(key=''){
 
  const next=documentNextKey(key);
  if(next){
-   const docType=document.getElementById('cidDocType')?.value||'id';
+   const docType=document.getElementById('cidDocType')?.value||'auto';
    if(key==='idFront' && docType==='passport'){
      setTimeout(()=>clientWizardShowStep(3),120);
      return true;
@@ -15458,10 +15464,10 @@ window.confirmSkipClientPhoto=confirmSkipClientPhoto;
 function clientWizardNext(){
  // Étape 1 : touriste / billet. Le billet reste facultatif.
  if(clientWizardStep===2){
-   const type=document.getElementById('cidDocType')?.value||'id';
+   const type=document.getElementById('cidDocType')?.value||'auto';
    const missing=[];
-   if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':"identité recto");
-   if(type==='id'&&!photoDraft.clientDocs?.idBack)missing.push("identité verso");
+   if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':'document recto');
+   if(type!=='passport'&&!photoDraft.clientDocs?.idBack)missing.push('document verso');
    if(missing.length){
      confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,3);
      return;
@@ -15933,25 +15939,29 @@ window.scannerDocumentIdentite=scannerDocumentIdentite;
 
 
 function updateIdentityDocumentMode(){
- const type=document.getElementById('cidDocType')?.value||'id';
+ const type=document.getElementById('cidDocType')?.value||'auto';
  const info=document.getElementById('identityDocModeInfo');
  const frontCard=document.getElementById('card_clientDocs_idFront');
  const backCard=document.getElementById('card_clientDocs_idBack');
 
- if(type==='passport'){
-   if(info)info.innerHTML='🛂 <b>Passeport sélectionné</b> — photographie la page d’identité principale. Le verso n’est pas obligatoire.';
-   if(frontCard){
-     const h=frontCard.querySelector('h4');
-     if(h)h.textContent='🛂 Page identité du passeport';
-   }
-   if(backCard)backCard.style.opacity='.55';
- }else{
-   if(info)info.innerHTML='🪪 <b>Pièce d’identité sélectionnée</b> — photographie le recto puis le verso.';
-   if(frontCard){
-     const h=frontCard.querySelector('h4');
-     if(h)h.textContent="🪪 Carte d'identité recto";
-   }
-   if(backCard)backCard.style.opacity='1';
+ const messages={
+   auto:'🔎 <b>Détection automatique</b> — scanne le document. LOCautomoto identifiera automatiquement CNI, passeport, visa ou autre document d’identité.',
+   id:'🪪 <b>Pièce d’identité</b> — scanne le recto puis le verso.',
+   passport:'🛂 <b>Passeport</b> — scanne la page d’identité principale.',
+   visa:'🛃 <b>Visa</b> — scanne le recto puis le verso si le document en comporte un.',
+   other:'📄 <b>Autre document d’identité</b> — scanne le recto puis le verso si nécessaire.'
+ };
+ if(info)info.innerHTML=messages[type]||messages.auto;
+
+ if(frontCard){
+   const h=frontCard.querySelector('h4');
+   if(h)h.textContent=type==='passport'?'🛂 Scan passeport':'📷 Scan recto';
+ }
+ if(backCard){
+   const h=backCard.querySelector('h4');
+   if(h)h.textContent='📷 Scan verso';
+   backCard.style.opacity='1';
+   backCard.style.display=type==='passport'?'none':'';
  }
 }
 window.updateIdentityDocumentMode=updateIdentityDocumentMode;
@@ -16236,7 +16246,7 @@ function detectIdentityCountryAndType(raw=''){
 
  let country='Inconnu';
  let countryCode='';
- let type='Pièce d’identité';
+ let type='Document d’identité';
 
  // France
  if(
@@ -16264,9 +16274,10 @@ function detectIdentityCountryAndType(raw=''){
  }
 
  // Generic passport / ID detection
- if(type==='Pièce d’identité'){
-   if(/PASSPORT|PASSEPORT/.test(text)) type='Passeport';
-   else if(/IDENTITY CARD|IDENTITY DOCUMENT|CARTE D['’ ]IDENTIT[ÉE]|NATIONAL ID/.test(text)) type="Carte d'identité";
+ if(type==='Document d’identité'){
+   if(/VISA|ENTRY VISA|SCHENGEN VISA|VIGNETTE VISA/.test(text)) type='Visa';
+   else if(/PASSPORT|PASSEPORT/.test(text) || /^P<[A-Z]{3}/m.test(text)) type='Passeport';
+   else if(/IDENTITY CARD|IDENTITY DOCUMENT|CARTE D['’ ]IDENTIT[ÉE]|NATIONAL ID|NATIONAL IDENTITY CARD/.test(text)) type="Carte d'identité";
    else if(/DRIVING LICEN[CS]E|PERMIS DE CONDUIRE/.test(text)) type='Permis de conduire';
  }
 
@@ -16639,12 +16650,8 @@ async function analyzeIdentityDocumentsAutomatically(){
        : '🌍 Analyse automatique internationale du verso…');
 
    const sources=[];
-   if(docType==='passport'){
-     if(front)sources.push({side:'page identité',src:front});
-   }else{
-     if(front)sources.push({side:'recto',src:front});
-     if(back)sources.push({side:'verso',src:back});
-   }
+   if(front)sources.push({side:docType==='passport'?'page identité':'recto',src:front});
+   if(back&&docType!=='passport')sources.push({side:'verso',src:back});
 
    let combinedText='';
 
@@ -16654,7 +16661,18 @@ async function analyzeIdentityDocumentsAutomatically(){
 
    let data=extractInternationalIdentityData(combinedText);
 
-   // Une seule lecture OCR par photo : aucune seconde passe automatique.
+   // Détection automatique du type de document après lecture.
+   const select=document.getElementById('cidDocType');
+   if(select && (select.value==='auto'||!select.value)){
+     const detectedType=String(data.type||'').toLowerCase();
+     if(detectedType.includes('passeport'))select.value='passport';
+     else if(detectedType.includes('visa'))select.value='visa';
+     else if(detectedType.includes('identit'))select.value='id';
+     else select.value='other';
+     updateIdentityDocumentMode();
+     updateClientWizardIdentityCards();
+   }
+
    fillDetectedIdentityData(data);
 
    const summary=[
