@@ -15326,6 +15326,22 @@ function documentReviewLabel(key=''){
  return labels[key]||'Document';
 }
 
+function detectedDocumentFieldsHtml(key=''){
+ const fields=[];
+ const val=id=>String(document.getElementById(id)?.value||'').trim();
+ if(key==='idFront'||key==='idBack'){
+   const name=val('cname'),first=val('cfirst'),birth=val('cbirth'),sex=val('csex'),nat=val('cnationality'),num=val('cdocnum'),exp=val('cexpiry');
+   if(name)fields.push(['Nom',name]); if(first)fields.push(['Prénom',first]);
+   if(birth)fields.push(['Naissance',birth]); if(sex)fields.push(['Sexe',sex]);
+   if(nat)fields.push(['Nationalité',nat]); if(num)fields.push(['N° document',num]); if(exp)fields.push(['Expiration',exp]);
+ }
+ if(key==='addressProof'){const a=val('caddr');if(a)fields.push(['Adresse',a])}
+ if(key==='residenceProof'){const a=val('cresidenceaddr');if(a)fields.push(['Adresse résidence',a])}
+ if(!fields.length)return '';
+ return '<div class="travel-ticket-details" style="margin:10px 0">'+fields.map(([k,v])=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #34414c"><small>'+esc(k)+'</small><b style="text-align:right">'+esc(v)+'</b></div>').join('')+'</div>';
+}
+window.detectedDocumentFieldsHtml=detectedDocumentFieldsHtml;
+
 function showDocumentReadable(key,message='Photo lisible et informations détectées'){
  const data=photoDraft.clientDocs?.[key];
  const src=data?.src||'';
@@ -15337,6 +15353,7 @@ function showDocumentReadable(key,message='Photo lisible et informations détect
      <div class="client-skip-box">
        <h2>✅ Photo lisible</h2>
        <div class="notice success">${esc(message)}</div>
+       ${detectedDocumentFieldsHtml(key)}
        <div class="photo-review-box">
          ${src?`<img src="${src}" style="width:100%;height:auto;object-fit:contain;display:block">`:''}
        </div>
@@ -16733,7 +16750,7 @@ async function analyzeIdentityDocumentsAutomatically(){
    if(identityAnalysisIsSufficient(data)){
      setOCRStatus(`✅ Détection automatique validée<br>${summary.join('<br>')}<br><span class="muted">Recadrage + lectures OCR multiples appliqués automatiquement.</span>`,'good');
      cameraBeep(true); toast('Document reconnu et informations préremplies');
-     setTimeout(()=>continueClientIdentityAutomatically(),140);
+     setTimeout(()=>showDocumentReadable(back?'idBack':'idFront','Informations détectées — contrôle puis valide pour continuer'),140);
    }else{
      setOCRStatus('⚠️ Photo enregistrée. Plusieurs lectures OCR ont été tentées, mais les champs essentiels restent insuffisants.','bad');
      const reviewKey=back?'idBack':'idFront';
@@ -17595,12 +17612,29 @@ async function captureDocumentFallback(key,input){
    // Identité : l'OCR décide si la photo est lisible et si les champs essentiels ont été détectés.
    setTimeout(()=>scheduleIdentityAutoAnalysis(),150);
  }else{
-   // Tous les autres documents utilisent la même règle de contrôle photo.
+   // Tous les autres documents : même renforcement que l'identité.
    setTimeout(async()=>{
+     const stored=photoDraft.clientDocs?.[key];
+     let ocrText='';
+     if(window.Tesseract && stored?.src){
+       for(let pass=1;pass<=3;pass++){
+         try{ocrText+='\n'+await runIdentityOCRPass(stored.src,documentReviewLabel(key),pass)}catch(_){}
+       }
+       if(stored.originalSrc && stored.originalSrc!==stored.src){
+         try{ocrText+='\n'+await runIdentityOCRPass(stored.originalSrc,documentReviewLabel(key)+' original',2)}catch(_){}
+       }
+       stored.ocrText=ocrText;
+     }
+     if(key==='travelTicket')await analyzeTravelTicketAutomatically();
+     if(key==='addressProof'||key==='residenceProof'){
+       const address=extractAddressFromDocumentText(ocrText);
+       const target=document.getElementById(key==='addressProof'?'caddr':'cresidenceaddr');
+       if(target&&address)target.value=address;
+     }
      const check=await assessStoredDocumentReadability(key);
-     if(check.ok){
-       if(key==='travelTicket')await analyzeTravelTicketAutomatically();
-       showDocumentReadable(key,key==='travelTicket'?'Billet lisible et informations de voyage analysées':'Photo lisible et document détecté');
+     const textEnough=String(ocrText||'').replace(/\s+/g,' ').trim().length>=18;
+     if(check.ok||textEnough){
+       showDocumentReadable(key,key==='travelTicket'?'Billet lisible et informations de voyage analysées':'Photo contrôlée et document détecté');
      }else{
        showDocumentUnreadable(key,`Photo non validée${check.reason?` : ${check.reason}`:''}`);
      }
