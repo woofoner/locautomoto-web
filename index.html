@@ -39806,7 +39806,9 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
     const cur=current();
 
     // Progression normale : une seule étape en avant à la fois.
-    if(target>reached && target!==cur+1){
+    // Autorise toujours l'enchaînement normal vers l'étape suivante.
+    // Le verrouillage ne concerne que les sauts manuels de plusieurs étapes.
+    if(target>reached && target>cur+1){
       toast('Cette étape n’est pas encore disponible');
       refreshProgress();
       return false;
@@ -39906,6 +39908,7 @@ window.showDetectedCountryDecision=showDetectedCountryDecision;
 
     if(v==='non'){
       photoDraft.travelTicketSkipped=true;
+      reached=Math.max(reached,2);
       setTimeout(()=>show(2),80);
       return;
     }
