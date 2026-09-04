@@ -16326,28 +16326,60 @@ function extractMRZData(raw=''){
  const lines=String(raw||'')
    .toUpperCase()
    .split(/\n/)
-   .map(x=>x.replace(/\s+/g,'').trim())
+   .map(x=>x.replace(/[^A-Z0-9<]/g,'').trim())
    .filter(x=>x.includes('<') && x.length>=25);
 
  if(!lines.length)return {};
 
- let documentNumber='', nationality='', birthDate='', sex='', expiryDate='';
+ let documentNumber='', nationality='', birthDate='', sex='', expiryDate='', surname='', first='';
 
- // TD3 passport-like MRZ.
- const l2=lines.find(x=>x.length>=40 && /[0-9<]/.test(x));
- if(l2){
-   documentNumber=(l2.slice(0,9)||'').replace(/</g,'').trim();
-   nationality=(l2.slice(10,13)||'').replace(/</g,'').trim();
-   birthDate=(l2.slice(13,19)||'').replace(/</g,'').trim();
-   sex=(l2.slice(20,21)||'').replace(/</g,'').trim();
-   expiryDate=(l2.slice(21,27)||'').replace(/</g,'').trim();
+ const nameLine=lines.find(x=>/^[PIACV][A-Z<]/.test(x) && x.includes('<<')) || lines.find(x=>x.includes('<<'));
+ if(nameLine){
+   let zone=nameLine;
+   if(/^[PIVAC][A-Z<]{3}/.test(zone))zone=zone.slice(5);
+   else if(/^[PIVAC][A-Z<]{2}/.test(zone))zone=zone.slice(4);
+   const parts=zone.split('<<');
+   surname=cleanOCRName((parts[0]||'').replace(/</g,' '));
+   first=cleanOCRName((parts.slice(1).join(' ')||'').replace(/</g,' '));
  }
 
- return {documentNumber,nationality,birthDate,sex,expiryDate,mrzLines:lines};
+ // TD3 passport / visa line 2.
+ const td3=lines.find(x=>x.length>=40 && /[0-9<]/.test(x) && x!==nameLine);
+ if(td3){
+   documentNumber=(td3.slice(0,9)||'').replace(/</g,'').trim();
+   nationality=(td3.slice(10,13)||'').replace(/</g,'').trim();
+   birthDate=(td3.slice(13,19)||'').replace(/</g,'').trim();
+   sex=(td3.slice(20,21)||'').replace(/</g,'').trim();
+   expiryDate=(td3.slice(21,27)||'').replace(/</g,'').trim();
+ }
+
+ // TD1 identity card: 3 lines of ~30 chars.
+ const td1=lines.filter(x=>x.length>=28&&x.length<=36);
+ if(td1.length>=2 && !documentNumber){
+   const l1=td1[0],l2=td1[1];
+   if(/^[IACV]/.test(l1)){
+     documentNumber=(l1.slice(5,14)||'').replace(/</g,'').trim();
+     birthDate=(l2.slice(0,6)||'').replace(/</g,'').trim();
+     sex=(l2.slice(7,8)||'').replace(/</g,'').trim();
+     expiryDate=(l2.slice(8,14)||'').replace(/</g,'').trim();
+     nationality=(l2.slice(15,18)||'').replace(/</g,'').trim();
+   }
+   const nl=td1.find(x=>x.includes('<<') && x!==l1 && x!==l2);
+   if(nl && (!surname||!first)){
+     const pp=nl.split('<<');
+     surname=surname||cleanOCRName((pp[0]||'').replace(/</g,' '));
+     first=first||cleanOCRName((pp.slice(1).join(' ')||'').replace(/</g,' '));
+   }
+ }
+
+ return {
+   documentNumber,nationality,birthDate,sex,expiryDate,
+   surname:titleCaseName(surname),first:titleCaseName(first),mrzLines:lines
+ };
 }
 
 
-function normalizeIdentityDateForInput(value=''){
+function normalizeIdentityDateForInputfunction normalizeIdentityDateForInput(value=''){
  const s=String(value||'').trim();
  if(!s)return '';
  let m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
@@ -16420,74 +16452,95 @@ function extractFrenchIdentityData(raw=''){
  };
 }
 
+async function prepareIdentityOCRSource(src,mode='normal'){
+ if(!src || mode==='normal')return src;
+ return await new Promise(resolve=>{
+   const img=new Image();
+   img.onload=()=>{
+     try{
+       const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+       const targetW=Math.min(2600,Math.max(iw,1900));
+       const scale=targetW/iw;
+       const c=document.createElement('canvas');
+       c.width=Math.max(1,Math.round(iw*scale)); c.height=Math.max(1,Math.round(ih*scale));
+       const x=c.getContext('2d',{willReadFrequently:true});
+       x.drawImage(img,0,0,c.width,c.height);
+       const im=x.getImageData(0,0,c.width,c.height),d=im.data;
+       let hist=new Array(256).fill(0),sum=0,total=c.width*c.height;
+       for(let i=0;i<d.length;i+=4){
+         const y=Math.max(0,Math.min(255,Math.round(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])));
+         hist[y]++; sum+=y;
+       }
+       let sumB=0,wB=0,maxV=0,thr=145;
+       for(let t=0;t<256;t++){
+         wB+=hist[t]; if(!wB)continue;
+         const wF=total-wB;if(!wF)break;
+         sumB+=t*hist[t];
+         const mB=sumB/wB,mF=(sum-sumB)/wF;
+         const v=wB*wF*(mB-mF)*(mB-mF);
+         if(v>maxV){maxV=v;thr=t}
+       }
+       for(let i=0;i<d.length;i+=4){
+         let y=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];
+         if(mode==='gray'){
+           y=Math.max(0,Math.min(255,(y-128)*1.55+138));
+         }else{
+           y=y>thr?255:0;
+         }
+         d[i]=d[i+1]=d[i+2]=y; d[i+3]=255;
+       }
+       x.putImageData(im,0,0);
+       resolve(c.toDataURL('image/jpeg',mode==='binary'?.96:.93));
+     }catch(e){resolve(src)}
+   };
+   img.onerror=()=>resolve(src); img.src=src;
+ });
+}
+window.prepareIdentityOCRSource=prepareIdentityOCRSource;
+
 async function runIdentityOCRPass(src,side='document',pass=1){
- const config = {
+ const modes={1:'normal',2:'gray',3:'binary'};
+ const mode=modes[pass]||'normal';
+ const prepared=await prepareIdentityOCRSource(src,mode);
+ const config={
+   preserve_interword_spaces:'1',
    logger:m=>{
      if(m.status==='recognizing text'){
-       setOCRStatus(`🌍 Analyse ${side} — passe ${pass}/2… <b>${Math.round((m.progress||0)*100)}%</b>`);
+       setOCRStatus(`🌍 Analyse ${side} — lecture ${pass}/3… <b>${Math.round((m.progress||0)*100)}%</b>`);
      }
    }
  };
- if(pass===2){
-   config.tessedit_pageseg_mode='6';
-   config.preserve_interword_spaces='1';
- }
- const result=await Tesseract.recognize(src,'fra+eng',config);
+ if(pass===1)config.tessedit_pageseg_mode='11';
+ if(pass===2)config.tessedit_pageseg_mode='6';
+ if(pass===3)config.tessedit_pageseg_mode='12';
+ const result=await Tesseract.recognize(prepared,'fra+eng',config);
  return result?.data?.text||'';
 }
+
 
 function extractInternationalIdentityData(raw=''){
  const text=normalizeOCRText(raw);
  const detected=detectIdentityCountryAndType(text);
  const names=extractIdentityNames(text);
  const french=(detected.country==='France' || /R[ÉE]PUBLIQUE FRAN[ÇC]AISE|CARTE NATIONALE D['’ ]IDENTIT[ÉE]|\bFRA\b/i.test(text))
-   ? extractFrenchIdentityData(text)
-   : {};
+   ? extractFrenchIdentityData(text) : {};
  const mrz=extractMRZData(text);
 
- let documentNumber =
-   extractLabeledValue(
-     text,
-     "NUM[ÉE]RO(?: DE DOCUMENT)?|DOCUMENT(?: NO| NUMBER)?|ID(?: NO| NUMBER)?|IDENTITY(?: NO| NUMBER)?|NATIONAL ID(?: NO| NUMBER)?",
-     "[A-Z0-9<\\- ]{4,30}"
-   ) || mrz.documentNumber || '';
+ let documentNumber=extractLabeledValue(text,"NUM[ÉE]RO(?: DE DOCUMENT)?|DOCUMENT(?: NO| NUMBER)?|ID(?: NO| NUMBER)?|IDENTITY(?: NO| NUMBER)?|NATIONAL ID(?: NO| NUMBER)?","[A-Z0-9<\\- ]{4,30}")||mrz.documentNumber||'';
+ let nationality=extractLabeledValue(text,"NATIONALIT[ÉE]|NATIONALITY","[A-ZÀ-ÖØ-Þa-zà-öø-ÿ -]{2,30}")||mrz.nationality||'';
+ let birthDate=extractDateLike(text,["DATE DE NAISSANCE","DATE OF BIRTH","BIRTH DATE","DOB","N[ÉE]E? LE"])||mrz.birthDate||'';
+ let expiryDate=extractDateLike(text,["DATE D['’ ]EXPIRATION","EXPIRY DATE","EXPIRATION DATE","VALID UNTIL","DATE OF EXPIRY"])||mrz.expiryDate||'';
+ let issueDate=extractDateLike(text,["DATE DE D[ÉE]LIVRANCE","DATE OF ISSUE","ISSUE DATE","DELIVRANCE"]);
+ let sex=extractLabeledValue(text,"SEXE|SEX|GENDER","[MFIX]{1,10}")||mrz.sex||'';
+ let address=extractLabeledValue(text,"ADRESSE|ADDRESS","[^\\n]{5,120}");
 
- let nationality =
-   extractLabeledValue(text,"NATIONALIT[ÉE]|NATIONALITY","[A-ZÀ-ÖØ-Þa-zà-öø-ÿ -]{2,30}") ||
-   mrz.nationality || '';
-
- let birthDate = extractDateLike(text,[
-   "DATE DE NAISSANCE","DATE OF BIRTH","BIRTH DATE","DOB","N[ÉE]E? LE"
- ]);
-
- let expiryDate = extractDateLike(text,[
-   "DATE D['’ ]EXPIRATION","EXPIRY DATE","EXPIRATION DATE","VALID UNTIL","DATE OF EXPIRY"
- ]);
-
- let issueDate = extractDateLike(text,[
-   "DATE DE D[ÉE]LIVRANCE","DATE OF ISSUE","ISSUE DATE","DELIVRANCE"
- ]);
-
- let sex =
-   extractLabeledValue(text,"SEXE|SEX|GENDER","[MFIX]{1,10}") ||
-   mrz.sex || '';
-
- let address =
-   extractLabeledValue(text,"ADRESSE|ADDRESS","[^\\n]{5,120}");
-
- // Country-specific lightweight hints
- if(detected.country==='France'){
-   if(!nationality && /\bFRA\b/i.test(text))nationality='Française';
- }
-
- if(detected.country==='Maurice'){
-   if(!nationality && /\bMUS\b/i.test(text))nationality='Mauricienne';
- }
+ if(detected.country==='France' && !nationality && /\bFRA\b/i.test(text))nationality='Française';
+ if(detected.country==='Maurice' && !nationality && /\bMUS\b/i.test(text))nationality='Mauricienne';
 
  return {
    ...detected,
-   surname:french.surname||names.surname||'',
-   first:french.first||names.first||'',
+   surname:french.surname||names.surname||mrz.surname||'',
+   first:french.first||names.first||mrz.first||'',
    documentNumber:(french.documentNumber||documentNumber).replace(/[<>]/g,'').trim(),
    nationality:(french.nationality||nationality).trim(),
    birthDate:normalizeIdentityDateForInput(french.birthDate||birthDate),
@@ -16500,7 +16553,7 @@ function extractInternationalIdentityData(raw=''){
 }
 
 
-function nationalityFromDetection(data){
+function nationalityFromDetectionfunction nationalityFromDetection(data){
  const raw=String(data?.nationality||'').trim();
  const country=String(data?.country||'').trim();
 
@@ -16648,20 +16701,16 @@ async function analyzeIdentityDocumentsAutomatically(){
    if(front)sources.push({side:docType==='passport'?'page identité':'recto',src:front,raw:frontData?.raw||''});
    if(back&&docType!=='passport')sources.push({side:'verso',src:back,raw:backData?.raw||''});
    let combinedText='';
-   for(const item of sources)combinedText+='\n'+await runIdentityOCRPass(item.src,item.side,1);
-   let data=extractInternationalIdentityData(combinedText);
-   if(!identityAnalysisIsSufficient(data)){
-     for(const item of sources)combinedText+='\n'+await runIdentityOCRPass(item.src,item.side,2);
-     data=extractInternationalIdentityData(combinedText);
-   }
-   if(!identityAnalysisIsSufficient(data)){
-     for(const item of sources){
-       if(item.raw && item.raw!==item.src){
-         try{combinedText+='\n'+await runIdentityOCRPass(item.raw,item.side+' original',2)}catch(_){}
-       }
+   for(const item of sources){
+     for(let pass=1;pass<=3;pass++){
+       try{combinedText+='\\n'+await runIdentityOCRPass(item.src,item.side,pass)}catch(_){}
      }
-     data=extractInternationalIdentityData(combinedText);
+     if(item.raw && item.raw!==item.src){
+       try{combinedText+='\\n'+await runIdentityOCRPass(item.raw,item.side+' original',2)}catch(_){}
+     }
    }
+   let data=extractInternationalIdentityData(combinedText);
+
    const select=document.getElementById('cidDocType');
    if(select && (select.value==='auto'||!select.value)){
      const detectedType=String(data.type||'').toLowerCase();
