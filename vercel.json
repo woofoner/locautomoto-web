@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "functions": {
+    "api/vision.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/vision",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}
