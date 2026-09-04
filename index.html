@@ -15131,6 +15131,12 @@ function documentNextKey(key=''){
 function continueReviewedDocument(key=''){
  document.getElementById('photoReviewOverlay')?.remove();
 
+ const identityType=document.getElementById('cidDocType')?.value||'id';
+ if(key==='idFront' && identityType==='passport'){
+   setTimeout(()=>clientWizardShowStep(3),120);
+   return true;
+ }
+
  const next=documentNextKey(key);
  if(next){
    setTimeout(()=>scannerDocumentIdentite(next),120);
@@ -15138,11 +15144,11 @@ function continueReviewedDocument(key=''){
  }
 
  if(key==='idBack'){
-   setTimeout(()=>clientWizardShowStep(2),120);
+   setTimeout(()=>clientWizardShowStep(3),120);
    return true;
  }
  if(key==='permitBack'){
-   setTimeout(()=>clientWizardShowStep(3),120);
+   setTimeout(()=>clientWizardShowStep(4),120);
    return true;
  }
  if(key==='travelTicket'){
@@ -15241,13 +15247,17 @@ function passReviewedDocumentToStart(key=''){
    if(meta)meta.textContent='Document à reprendre';
  }
 
- // PASSER = retour à l'étape initiale de prise des documents.
+ // PASSER = rester/revenir à l'étape correspondant au document concerné.
+ const targetStep = /^permit/i.test(key) ? 3
+   : /^(idFront|idBack)$/i.test(key) ? 2
+   : /^(residenceProof|addressProof)$/i.test(key) ? 4
+   : 1;
  if(typeof clientWizardShowStep==='function'){
-   clientWizardShowStep(1);
+   clientWizardShowStep(targetStep);
  }else{
-   clientWizardStep=1;
+   clientWizardStep=targetStep;
  }
- toast('Retour à l’étape 1');
+ toast(`Retour à l’étape ${targetStep}`);
 }
 window.passReviewedDocumentToStart=passReviewedDocumentToStart;
 
@@ -15303,26 +15313,26 @@ window.cancelSkipClientPhoto=cancelSkipClientPhoto;
 window.confirmSkipClientPhoto=confirmSkipClientPhoto;
 
 function clientWizardNext(){
- if(clientWizardStep===1){
+ if(clientWizardStep===2){
    const type=document.getElementById('cidDocType')?.value||'id';
    const missing=[];
    if(!photoDraft.clientDocs?.idFront)missing.push(type==='passport'?'passeport':"identité recto");
    if(type==='id'&&!photoDraft.clientDocs?.idBack)missing.push("identité verso");
-   if(missing.length){
-     confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,2);
-     return;
-   }
- }
- if(clientWizardStep===2){
-   const missing=[];
-   if(!photoDraft.clientDocs?.permitFront)missing.push('permis recto');
-   if(!photoDraft.clientDocs?.permitBack)missing.push('permis verso');
    if(missing.length){
      confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,3);
      return;
    }
  }
  if(clientWizardStep===3){
+   const missing=[];
+   if(!photoDraft.clientDocs?.permitFront)missing.push('permis recto');
+   if(!photoDraft.clientDocs?.permitBack)missing.push('permis verso');
+   if(missing.length){
+     confirmSkipClientPhotoStep(`Photo manquante : ${missing.join(' et ')}.`,4);
+     return;
+   }
+ }
+ if(clientWizardStep===4){
    const name=document.getElementById('cname')?.value.trim()||'';
    const first=document.getElementById('cfirst')?.value.trim()||'';
    if(!name||!first){toast('Nom et prénom requis');return}
